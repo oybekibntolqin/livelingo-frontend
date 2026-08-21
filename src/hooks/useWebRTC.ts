@@ -27,24 +27,15 @@ import type {SerializedIceCandidate} from '../lib/callTypes'
 // uchun). Productionda o'z TURN serveringiz yoki pullik provayder tavsiya
 // etiladi.
 const ICE_SERVERS: RTCIceServer[] = [
-    {urls: 'stun:stun.l.google.com:19302'},
-    {urls: 'stun:openrelay.metered.ca:80'},
     {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
+        urls: 'stun:turn.livelingo.uz:3478',
     },
     {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
+        urls: 'turn:turn.livelingo.uz:3478',
+        username: 'livelingo',
+        credential: 'qGzHnirK9xLKiyYn75SbfuK1d/c3Fxq/',
     },
-    {
-        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-    },
-]
+];
 
 export type WebRTCConnectionState =
     | 'idle'
