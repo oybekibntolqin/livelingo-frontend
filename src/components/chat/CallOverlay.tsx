@@ -39,6 +39,11 @@ export default function CallOverlay() {
         mediaError,
         toggleMic,
         toggleCamera,
+        speakerOn,
+        speakerSupported,
+        toggleSpeaker,
+        canSwitchCamera,
+        switchCamera,
     } = useWebRTC({
         enabled,
         callId: call?.callId ?? '',
@@ -555,6 +560,45 @@ export default function CallOverlay() {
                                         )}
                                     </svg>
                                 </button>
+
+                                {/* Speaker (chiqish qurilmasi) — faqat brauzer setSinkId'ni qo'llab-quvvatlasa ko'rsatiladi */}
+                                {speakerSupported && (
+                                    <button
+                                        onClick={toggleSpeaker}
+                                        className={`grid h-12 w-12 place-items-center rounded-2xl transition duration-200 border shadow-md hover:scale-105 active:scale-95 ${
+                                            speakerOn
+                                                ? 'bg-zinc-800/80 border-white/10 text-white hover:bg-zinc-700'
+                                                : 'bg-amber-500 border-amber-400 text-white'
+                                        }`}
+                                        title={speakerOn ? "Karnayni o'chirish" : 'Karnayni yoqish'}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                                            {speakerOn ? (
+                                                <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
+                                            ) : (
+                                                <line x1="23" y1="9" x2="17" y2="15" />
+                                            )}
+                                            {speakerOn ? null : <line x1="17" y1="9" x2="23" y2="15" />}
+                                        </svg>
+                                    </button>
+                                )}
+
+                                {/* Old/orqa kamera almashtirish — faqat bir nechta kamera bo'lsa ko'rsatiladi */}
+                                {canSwitchCamera && (
+                                    <button
+                                        onClick={switchCamera}
+                                        className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-800/80 border border-white/10 text-white shadow-md transition duration-200 hover:bg-zinc-700 hover:scale-105 active:scale-95"
+                                        title="Kamerani almashtirish (old/orqa)"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                            <path d="M17 1l4 4-4 4" />
+                                            <path d="M3 11V9a4 4 0 014-4h14" />
+                                            <path d="M7 23l-4-4 4-4" />
+                                            <path d="M21 13v2a4 4 0 01-4 4H3" />
+                                        </svg>
+                                    </button>
+                                )}
 
                                 {/* Yakunlash */}
                                 <button
