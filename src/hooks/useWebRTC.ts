@@ -12,10 +12,6 @@
 //   • Offer FAQAT connected/callId/pc/localStream mavjud bo'lganda
 //     yaratiladi — bu onnegotiationneeded orqali tabiiy ravishda ta'minlanadi,
 //     chunki track faqat pc yaratilgandan keyin qo'shiladi (Problem 8)
-//   • RACE FIX: OFFER/ANSWER/ICE pc yaratilishidan OLDIN kelib qolsa ham
-//     (mobil qurilmalarda getUserMedia sekinroq bo'lishi mumkin), signal
-//     yo'qolib ketmaydi — earlySignalQueueRef orqali navbatga qo'yiladi va
-//     pc tayyor bo'lgach qayta ishlanadi.
 //
 // CallOverlay bu hook'ni chaqiradi va FAQAT UI render qiladi — o'zi
 // PeerConnection yaratmaydi, socket'ga obuna bo'lmaydi (Problem 12).
@@ -25,12 +21,28 @@ import {chatSocket} from '../lib/chatSocket'
 import type {SignalMessage} from '../lib/chatTypes'
 import type {SerializedIceCandidate} from '../lib/callTypes'
 
+// STUN — barcha holatlarda ishlaydi.
+// TURN — bepul OpenRelay (Metered.ca). Public/shared credential, shuning
+// uchun faqat zaxira sifatida (NAT/firewall orqasidagi foydalanuvchilar
+// uchun). Productionda o'z TURN serveringiz yoki pullik provayder tavsiya
+// etiladi.
 const ICE_SERVERS: RTCIceServer[] = [
-    {urls: 'stun:turn.livelingo.uz:3478'},
+    {urls: 'stun:stun.l.google.com:19302'},
+    {urls: 'stun:openrelay.metered.ca:80'},
     {
-        urls: 'turn:turn.livelingo.uz:3478',
-        username: 'livelingo',
-        credential: 'qGzHnirK9xLKiyYn75SbfuK1d/c3Fxq/',
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+    },
+    {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+    },
+    {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
     },
 ]
 
@@ -67,14 +79,6 @@ interface UseWebRTCResult {
     toggleMic: () => void
     toggleCamera: () => void
     stop: () => void
-    // ── Speaker chiqishi (Problem: Speaker tugmasi) ──
-    speakerOn: boolean
-    speakerSupported: boolean
-    toggleSpeaker: () => void
-    // ── Old/orqa kamera almashtirish (Problem: Front/Rear tugmasi) ──
-    facingMode: 'user' | 'environment'
-    canSwitchCamera: boolean
-    switchCamera: () => void
 }
 
 function parseCandidate(raw: SerializedIceCandidate): RTCIceCandidateInit {
@@ -94,20 +98,11 @@ export function useWebRTC({
     const [muted, setMuted] = useState(false)
     const [cameraOff, setCameraOff] = useState(false)
     const [mediaError, setMediaError] = useState<string | null>(null)
-    // Speaker chiqishi (setSinkId qo'llab-quvvatlansa ishlaydi — asosan
-    // Chrome/Edge desktop va Android Chrome'da; iOS Safari'da API yo'q,
-    // shu sabab tugma faqat qo'llab-quvvatlansa ko'rsatiladi).
-    const [speakerOn, setSpeakerOn] = useState(true)
-    const [speakerSupported, setSpeakerSupported] = useState(false)
-    // Old (user) / orqa (environment) kamera
-    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
-    const [canSwitchCamera, setCanSwitchCamera] = useState(false)
 
     const localVideoRef = useRef<HTMLVideoElement>(null)
     const remoteVideoRef = useRef<HTMLVideoElement>(null)
     const localStreamRef = useRef<MediaStream | null>(null)
     const pcRef = useRef<RTCPeerConnection | null>(null)
-    const facingModeRef = useRef<'user' | 'environment'>('user')
 
     // ── Har doim eng so'nggi qiymatlarni ushlab turuvchi ref'lar ──
     // Signal handler closure ichida yaratilsa ham, bular orqali har doim
@@ -142,14 +137,6 @@ export function useWebRTC({
     // ── ICE candidate queue (Problem 9) ──
     const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
 
-    // ── "Erta kelgan" signal navbati (RACE FIX) ──
-    // pc hali yaratilmagan bo'lsa ham (getUserMedia/RTCPeerConnection
-    // asinxron tayyorlanmoqda), OFFER/ANSWER/ICE signallari yo'qolib
-    // ketmasin uchun shu yerga navbatga qo'yiladi, pc tayyor bo'lgach
-    // qayta ishlanadi.
-    const earlySignalQueueRef = useRef<SignalMessage[]>([])
-    const pcReadyRef = useRef(false)
-
     const flushPendingCandidates = useCallback(async (pc: RTCPeerConnection) => {
         const queued = pendingCandidatesRef.current.splice(0)
         for (const cand of queued) {
@@ -179,30 +166,12 @@ export function useWebRTC({
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
 
         pendingCandidatesRef.current = []
-        earlySignalQueueRef.current = []
-        pcReadyRef.current = false
         makingOfferRef.current = false
         ignoreOfferRef.current = false
         isSettingRemoteAnswerPendingRef.current = false
 
         setConnectionState('idle')
         setElapsed(0)
-
-        // MUHIM FIX (Problem: mute holati keyingi qo'ng'iroqqa "saqlanib
-        // qolishi"): CallOverlay/useWebRTC komponent instance'i qo'ng'iroqlar
-        // orasida unmount BO'LMAYDI (CallLayer butun ilova bo'ylab doimiy
-        // mount qilingan — qarang CallLayer.tsx), shuning uchun useState bilan
-        // saqlangan `muted`/`cameraOff`/`speakerOn`/`facingMode` avvalgi
-        // qo'ng'iroqdan keyin ham eskicha qolib ketardi. Har bir qo'ng'iroq
-        // tugaganda (yoki hali boshlanmasdan) bu holatlar boshlang'ich
-        // qiymatiga qaytariladi — yangi qo'ng'iroq HAR DOIM ochiq mikrofon/
-        // kamera va standart speaker bilan boshlanadi.
-        setMuted(false)
-        setCameraOff(false)
-        setSpeakerOn(true)
-        setFacingMode('user')
-        facingModeRef.current = 'user'
-        setMediaError(null)
     }, [])
 
     // ── PeerConnection lifecycle — FAQAT `enabled` o'zgarganda (Problem 6) ──
@@ -216,73 +185,16 @@ export function useWebRTC({
 
         const setup = async () => {
             try {
-                // Aniq audio constraint'lar: ba'zi noutbuklarda (ayniqsa
-                // tashqi/USB mikrofon yoki drayver darajasidagi AGC muammosi
-                // bo'lganlarda) constraint berilmasa brauzer standart
-                // qurilmani noto'g'ri sozlashlar bilan ochishi mumkin va
-                // audio deyarli eshitilmay qoladi. Bu yerda aniq yoqamiz.
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true,
-                    },
-                    video: {facingMode: facingModeRef.current},
+                    audio: true,
+                    video: true,
                 })
                 if (cancelled) {
                     stream.getTracks().forEach((t) => t.stop())
                     return
                 }
-
-                // ── Mikrofon diagnostikasi (Problem: "laptop mikrofoni
-                // ishlamayapti") ──
-                // Agar audio track umuman kelmasa (masalan OS darajasida
-                // mikrofonga ruxsat berilgan-u, lekin boshqa dastur uni band
-                // qilib turgan bo'lsa) — buni ANIQ xabar qilib beramiz,
-                // aks holda foydalanuvchi bu "ilova xatosi" deb o'ylaydi.
-                const audioTrack = stream.getAudioTracks()[0]
-                if (!audioTrack) {
-                    setMediaError(
-                        "Mikrofon topilmadi yoki ruxsat berilmadi. Brauzer sozlamalaridan mikrofonga ruxsat berilganini tekshiring."
-                    )
-                } else {
-                    // `track.muted` — brauzer/OS darajasida real vaqtda audio
-                    // signal kelmayotganini bildiradi (masalan mikrofon
-                    // boshqa ilova tomonidan band qilingan). Bu holatni
-                    // kuzatib, foydalanuvchiga bildiramiz.
-                    const reportHardwareMute = () => {
-                        if (audioTrack.muted) {
-                            setMediaError(
-                                "Mikrofon signali kelmayapti — u boshqa dastur tomonidan band qilingan yoki OS darajasida o'chirilgan bo'lishi mumkin."
-                            )
-                        }
-                    }
-                    audioTrack.onmute = reportHardwareMute
-                    audioTrack.onunmute = () => setMediaError(null)
-                    audioTrack.onended = () => {
-                        setMediaError('Mikrofon uzildi. Qurilmani tekshirib, qayta urinib ko\'ring.')
-                    }
-                    // Ba'zi noutbuklarda ruxsat berilgandan keyin ham track
-                    // "muted: true" holatida boshlanadi — darhol tekshiramiz.
-                    reportHardwareMute()
-                }
-
                 localStreamRef.current = stream
                 if (localVideoRef.current) localVideoRef.current.srcObject = stream
-
-                // Nechta kamera mavjudligini aniqlaymiz — faqat bittadan
-                // ko'p bo'lsa "old/orqa" almashtirish tugmasi ko'rsatiladi.
-                try {
-                    const devices = await navigator.mediaDevices.enumerateDevices()
-                    const videoInputs = devices.filter((d) => d.kind === 'videoinput')
-                    setCanSwitchCamera(videoInputs.length > 1)
-                } catch {
-                    setCanSwitchCamera(false)
-                }
-                setSpeakerSupported(
-                    typeof (HTMLMediaElement.prototype as unknown as {setSinkId?: unknown}).setSinkId ===
-                        'function'
-                )
 
                 const pc = new RTCPeerConnection({iceServers: ICE_SERVERS})
                 pcRef.current = pc
@@ -350,14 +262,6 @@ export function useWebRTC({
                 }
 
                 setConnectionState('new')
-
-                // ── pc endi tayyor — shu vaqt oralig'ida "erta kelgan"
-                // signallar bo'lsa, ularni endi qayta ishlaymiz (RACE FIX) ──
-                pcReadyRef.current = true
-                const queued = earlySignalQueueRef.current.splice(0)
-                for (const sig of queued) {
-                    await processSignalRef.current?.(sig)
-                }
             } catch (err) {
                 if (!cancelled) {
                     setMediaError(
@@ -377,14 +281,13 @@ export function useWebRTC({
     }, [enabled])
 
     // ── Signalizatsiya qabul qilish: OFFER / ANSWER / ICE (Problem 4, 9, 10) ──
-    // processSignal — pc ustida ishlaydigan asosiy mantiq. Bu ref orqali
-    // saqlanadi, shunda setup() ichidan (pc tayyor bo'lgan zahoti, navbatni
-    // bo'shatishda) ham, quyidagi jonli subscribe handler ichidan ham bir
-    // xil funksiya chaqiriladi (RACE FIX — signal yo'qolib ketmaydi).
-    const processSignalRef = useRef<((sig: SignalMessage) => Promise<void>) | null>(null)
-
     useEffect(() => {
-        processSignalRef.current = async (sig: SignalMessage) => {
+        if (!enabled) return
+
+        const unsub = chatSocket.subscribe(async (sig: SignalMessage) => {
+            // Har doim callIdRef'dan o'qiymiz — closure eskirgan bo'lsa ham
+            // muammo yo'q (Problem 4).
+            if (!sig.callId || sig.callId !== callIdRef.current) return
             const pc = pcRef.current
             if (!pc) return
 
@@ -430,26 +333,6 @@ export function useWebRTC({
             } catch (err) {
                 console.warn('WebRTC signal xatosi', err)
             }
-        }
-    }, [flushPendingCandidates])
-
-    useEffect(() => {
-        if (!enabled) return
-
-        const unsub = chatSocket.subscribe(async (sig: SignalMessage) => {
-            // Har doim callIdRef'dan o'qiymiz — closure eskirgan bo'lsa ham
-            // muammo yo'q (Problem 4).
-            if (!sig.callId || sig.callId !== callIdRef.current) return
-
-            // RACE FIX: pc hali tayyor bo'lmasa (getUserMedia/RTCPeerConnection
-            // hali asinxron tayyorlanmoqda), signalni YO'QOTMASDAN navbatga
-            // qo'yamiz — pc tayyor bo'lgach setup() ichida qayta ishlanadi.
-            if (!pcReadyRef.current) {
-                earlySignalQueueRef.current.push(sig)
-                return
-            }
-
-            await processSignalRef.current?.(sig)
         })
 
         return unsub
@@ -489,82 +372,6 @@ export function useWebRTC({
         stopInternal()
     }, [stopInternal])
 
-    // ── Speaker (chiqish qurilmasi) almashtirish ──
-    // setSinkId — audio remoteVideoRef orqali chiqadi (video elementi audio
-    // trekni ham o'z ichiga oladi), shuning uchun output shu elementga
-    // qo'llaniladi. Qo'llab-quvvatlanmasa (masalan iOS Safari) tugma UI'da
-    // umuman ko'rsatilmaydi (speakerSupported=false).
-    const toggleSpeaker = useCallback(() => {
-        const videoEl = remoteVideoRef.current as (HTMLVideoElement & {
-            setSinkId?: (id: string) => Promise<void>
-        }) | null
-        if (!videoEl || typeof videoEl.setSinkId !== 'function') return
-
-        setSpeakerOn((on) => {
-            const next = !on
-            ;(async () => {
-                try {
-                    const devices = await navigator.mediaDevices.enumerateDevices()
-                    const outputs = devices.filter((d) => d.kind === 'audiooutput')
-                    if (next) {
-                        // Standart (odatda bosh — telefon dinamigi/notebook
-                        // dinamiklari) chiqishga qaytamiz.
-                        await videoEl.setSinkId!('default')
-                    } else {
-                        // "Speaker" o'chirilganda — default bo'lmagan boshqa
-                        // chiqish qurilmasi bo'lsa (masalan quloqchin/earpiece)
-                        // shunga o'tamiz; topilmasa 'default' qoladi.
-                        const alt = outputs.find((d) => d.deviceId && d.deviceId !== 'default')
-                        if (alt) await videoEl.setSinkId!(alt.deviceId)
-                    }
-                } catch {
-                    /* setSinkId muvaffaqiyatsiz — tugma holati baribir UI'da yangilanadi */
-                }
-            })()
-            return next
-        })
-    }, [])
-
-    // ── Old/orqa kamera almashtirish ──
-    // Joriy video trekni to'xtatib, yangi facingMode bilan qayta
-    // getUserMedia chaqiramiz va RTCRtpSender'dagi trekni almashtiramiz
-    // (qayta negotiation shart emas — replaceTrack shu uchun bor).
-    const switchCamera = useCallback(async () => {
-        const pc = pcRef.current
-        const stream = localStreamRef.current
-        if (!pc || !stream) return
-
-        const nextFacing = facingModeRef.current === 'user' ? 'environment' : 'user'
-        try {
-            const newStream = await navigator.mediaDevices.getUserMedia({
-                video: {facingMode: nextFacing},
-                audio: false,
-            })
-            const newTrack = newStream.getVideoTracks()[0]
-            if (!newTrack) return
-
-            const sender = pc.getSenders().find((s) => s.track?.kind === 'video')
-            if (sender) await sender.replaceTrack(newTrack)
-
-            const oldTrack = stream.getVideoTracks()[0]
-            if (oldTrack) {
-                stream.removeTrack(oldTrack)
-                oldTrack.stop()
-            }
-            newTrack.enabled = !cameraOff
-            stream.addTrack(newTrack)
-
-            if (localVideoRef.current) localVideoRef.current.srcObject = stream
-
-            facingModeRef.current = nextFacing
-            setFacingMode(nextFacing)
-        } catch (err) {
-            setMediaError(
-                err instanceof Error ? err.message : "Kamerani almashtirib bo'lmadi"
-            )
-        }
-    }, [cameraOff])
-
     return {
         localVideoRef,
         remoteVideoRef,
@@ -577,11 +384,5 @@ export function useWebRTC({
         toggleMic,
         toggleCamera,
         stop,
-        speakerOn,
-        speakerSupported,
-        toggleSpeaker,
-        facingMode,
-        canSwitchCamera,
-        switchCamera,
     }
 }
