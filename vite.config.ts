@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 // Custom domain yoki user pages (username.github.io) uchun base = '/'
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: mode === 'production' ? '/livelingo-frontend/' : '/',
+  base: '/',
   server: {
     allowedHosts: true,
     // MUHIM (xavfsizlik bilan bog'liq): refresh token endi httpOnly
