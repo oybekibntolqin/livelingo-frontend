@@ -67,6 +67,14 @@ interface UseWebRTCResult {
     toggleMic: () => void
     toggleCamera: () => void
     stop: () => void
+    // ── Speaker chiqishi (Problem: Speaker tugmasi) ──
+    speakerOn: boolean
+    speakerSupported: boolean
+    toggleSpeaker: () => void
+    // ── Old/orqa kamera almashtirish (Problem: Front/Rear tugmasi) ──
+    facingMode: 'user' | 'environment'
+    canSwitchCamera: boolean
+    switchCamera: () => void
 }
 
 function parseCandidate(raw: SerializedIceCandidate): RTCIceCandidateInit {
@@ -86,11 +94,20 @@ export function useWebRTC({
     const [muted, setMuted] = useState(false)
     const [cameraOff, setCameraOff] = useState(false)
     const [mediaError, setMediaError] = useState<string | null>(null)
+    // Speaker chiqishi (setSinkId qo'llab-quvvatlansa ishlaydi — asosan
+    // Chrome/Edge desktop va Android Chrome'da; iOS Safari'da API yo'q,
+    // shu sabab tugma faqat qo'llab-quvvatlansa ko'rsatiladi).
+    const [speakerOn, setSpeakerOn] = useState(true)
+    const [speakerSupported, setSpeakerSupported] = useState(false)
+    // Old (user) / orqa (environment) kamera
+    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
+    const [canSwitchCamera, setCanSwitchCamera] = useState(false)
 
     const localVideoRef = useRef<HTMLVideoElement>(null)
     const remoteVideoRef = useRef<HTMLVideoElement>(null)
     const localStreamRef = useRef<MediaStream | null>(null)
     const pcRef = useRef<RTCPeerConnection | null>(null)
+    const facingModeRef = useRef<'user' | 'environment'>('user')
 
     // ── Har doim eng so'nggi qiymatlarni ushlab turuvchi ref'lar ──
     // Signal handler closure ichida yaratilsa ham, bular orqali har doim
@@ -170,6 +187,22 @@ export function useWebRTC({
 
         setConnectionState('idle')
         setElapsed(0)
+
+        // MUHIM FIX (Problem: mute holati keyingi qo'ng'iroqqa "saqlanib
+        // qolishi"): CallOverlay/useWebRTC komponent instance'i qo'ng'iroqlar
+        // orasida unmount BO'LMAYDI (CallLayer butun ilova bo'ylab doimiy
+        // mount qilingan — qarang CallLayer.tsx), shuning uchun useState bilan
+        // saqlangan `muted`/`cameraOff`/`speakerOn`/`facingMode` avvalgi
+        // qo'ng'iroqdan keyin ham eskicha qolib ketardi. Har bir qo'ng'iroq
+        // tugaganda (yoki hali boshlanmasdan) bu holatlar boshlang'ich
+        // qiymatiga qaytariladi — yangi qo'ng'iroq HAR DOIM ochiq mikrofon/
+        // kamera va standart speaker bilan boshlanadi.
+        setMuted(false)
+        setCameraOff(false)
+        setSpeakerOn(true)
+        setFacingMode('user')
+        facingModeRef.current = 'user'
+        setMediaError(null)
     }, [])
 
     // ── PeerConnection lifecycle — FAQAT `enabled` o'zgarganda (Problem 6) ──
@@ -183,16 +216,73 @@ export function useWebRTC({
 
         const setup = async () => {
             try {
+                // Aniq audio constraint'lar: ba'zi noutbuklarda (ayniqsa
+                // tashqi/USB mikrofon yoki drayver darajasidagi AGC muammosi
+                // bo'lganlarda) constraint berilmasa brauzer standart
+                // qurilmani noto'g'ri sozlashlar bilan ochishi mumkin va
+                // audio deyarli eshitilmay qoladi. Bu yerda aniq yoqamiz.
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: true,
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                    },
+                    video: {facingMode: facingModeRef.current},
                 })
                 if (cancelled) {
                     stream.getTracks().forEach((t) => t.stop())
                     return
                 }
+
+                // ── Mikrofon diagnostikasi (Problem: "laptop mikrofoni
+                // ishlamayapti") ──
+                // Agar audio track umuman kelmasa (masalan OS darajasida
+                // mikrofonga ruxsat berilgan-u, lekin boshqa dastur uni band
+                // qilib turgan bo'lsa) — buni ANIQ xabar qilib beramiz,
+                // aks holda foydalanuvchi bu "ilova xatosi" deb o'ylaydi.
+                const audioTrack = stream.getAudioTracks()[0]
+                if (!audioTrack) {
+                    setMediaError(
+                        "Mikrofon topilmadi yoki ruxsat berilmadi. Brauzer sozlamalaridan mikrofonga ruxsat berilganini tekshiring."
+                    )
+                } else {
+                    // `track.muted` — brauzer/OS darajasida real vaqtda audio
+                    // signal kelmayotganini bildiradi (masalan mikrofon
+                    // boshqa ilova tomonidan band qilingan). Bu holatni
+                    // kuzatib, foydalanuvchiga bildiramiz.
+                    const reportHardwareMute = () => {
+                        if (audioTrack.muted) {
+                            setMediaError(
+                                "Mikrofon signali kelmayapti — u boshqa dastur tomonidan band qilingan yoki OS darajasida o'chirilgan bo'lishi mumkin."
+                            )
+                        }
+                    }
+                    audioTrack.onmute = reportHardwareMute
+                    audioTrack.onunmute = () => setMediaError(null)
+                    audioTrack.onended = () => {
+                        setMediaError('Mikrofon uzildi. Qurilmani tekshirib, qayta urinib ko\'ring.')
+                    }
+                    // Ba'zi noutbuklarda ruxsat berilgandan keyin ham track
+                    // "muted: true" holatida boshlanadi — darhol tekshiramiz.
+                    reportHardwareMute()
+                }
+
                 localStreamRef.current = stream
                 if (localVideoRef.current) localVideoRef.current.srcObject = stream
+
+                // Nechta kamera mavjudligini aniqlaymiz — faqat bittadan
+                // ko'p bo'lsa "old/orqa" almashtirish tugmasi ko'rsatiladi.
+                try {
+                    const devices = await navigator.mediaDevices.enumerateDevices()
+                    const videoInputs = devices.filter((d) => d.kind === 'videoinput')
+                    setCanSwitchCamera(videoInputs.length > 1)
+                } catch {
+                    setCanSwitchCamera(false)
+                }
+                setSpeakerSupported(
+                    typeof (HTMLMediaElement.prototype as unknown as {setSinkId?: unknown}).setSinkId ===
+                        'function'
+                )
 
                 const pc = new RTCPeerConnection({iceServers: ICE_SERVERS})
                 pcRef.current = pc
@@ -399,6 +489,82 @@ export function useWebRTC({
         stopInternal()
     }, [stopInternal])
 
+    // ── Speaker (chiqish qurilmasi) almashtirish ──
+    // setSinkId — audio remoteVideoRef orqali chiqadi (video elementi audio
+    // trekni ham o'z ichiga oladi), shuning uchun output shu elementga
+    // qo'llaniladi. Qo'llab-quvvatlanmasa (masalan iOS Safari) tugma UI'da
+    // umuman ko'rsatilmaydi (speakerSupported=false).
+    const toggleSpeaker = useCallback(() => {
+        const videoEl = remoteVideoRef.current as (HTMLVideoElement & {
+            setSinkId?: (id: string) => Promise<void>
+        }) | null
+        if (!videoEl || typeof videoEl.setSinkId !== 'function') return
+
+        setSpeakerOn((on) => {
+            const next = !on
+            ;(async () => {
+                try {
+                    const devices = await navigator.mediaDevices.enumerateDevices()
+                    const outputs = devices.filter((d) => d.kind === 'audiooutput')
+                    if (next) {
+                        // Standart (odatda bosh — telefon dinamigi/notebook
+                        // dinamiklari) chiqishga qaytamiz.
+                        await videoEl.setSinkId!('default')
+                    } else {
+                        // "Speaker" o'chirilganda — default bo'lmagan boshqa
+                        // chiqish qurilmasi bo'lsa (masalan quloqchin/earpiece)
+                        // shunga o'tamiz; topilmasa 'default' qoladi.
+                        const alt = outputs.find((d) => d.deviceId && d.deviceId !== 'default')
+                        if (alt) await videoEl.setSinkId!(alt.deviceId)
+                    }
+                } catch {
+                    /* setSinkId muvaffaqiyatsiz — tugma holati baribir UI'da yangilanadi */
+                }
+            })()
+            return next
+        })
+    }, [])
+
+    // ── Old/orqa kamera almashtirish ──
+    // Joriy video trekni to'xtatib, yangi facingMode bilan qayta
+    // getUserMedia chaqiramiz va RTCRtpSender'dagi trekni almashtiramiz
+    // (qayta negotiation shart emas — replaceTrack shu uchun bor).
+    const switchCamera = useCallback(async () => {
+        const pc = pcRef.current
+        const stream = localStreamRef.current
+        if (!pc || !stream) return
+
+        const nextFacing = facingModeRef.current === 'user' ? 'environment' : 'user'
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                video: {facingMode: nextFacing},
+                audio: false,
+            })
+            const newTrack = newStream.getVideoTracks()[0]
+            if (!newTrack) return
+
+            const sender = pc.getSenders().find((s) => s.track?.kind === 'video')
+            if (sender) await sender.replaceTrack(newTrack)
+
+            const oldTrack = stream.getVideoTracks()[0]
+            if (oldTrack) {
+                stream.removeTrack(oldTrack)
+                oldTrack.stop()
+            }
+            newTrack.enabled = !cameraOff
+            stream.addTrack(newTrack)
+
+            if (localVideoRef.current) localVideoRef.current.srcObject = stream
+
+            facingModeRef.current = nextFacing
+            setFacingMode(nextFacing)
+        } catch (err) {
+            setMediaError(
+                err instanceof Error ? err.message : "Kamerani almashtirib bo'lmadi"
+            )
+        }
+    }, [cameraOff])
+
     return {
         localVideoRef,
         remoteVideoRef,
@@ -411,5 +577,11 @@ export function useWebRTC({
         toggleMic,
         toggleCamera,
         stop,
+        speakerOn,
+        speakerSupported,
+        toggleSpeaker,
+        facingMode,
+        canSwitchCamera,
+        switchCamera,
     }
 }
