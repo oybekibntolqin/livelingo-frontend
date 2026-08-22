@@ -44,8 +44,6 @@ export default function CallOverlay() {
         toggleSpeaker,
         canSwitchCamera,
         switchCamera,
-        localLevel,
-        remoteLevel,
     } = useWebRTC({
         enabled,
         callId: call?.callId ?? '',
@@ -472,35 +470,6 @@ export default function CallOverlay() {
 
                         {/* O'rta qism: Warning va tahlillar */}
                         <div className="relative z-10 px-4 flex flex-col gap-2 pointer-events-auto">
-                            {/* Audio-level diagnostikasi: mikrofon signalini
-                                REAL VAQTDA ko'rsatadi — agar gapirganda
-                                "Siz" bar harakatlanmasa, muammo mikrofon
-                                capture bosqichida (OS/drayver); agar u
-                                harakatlansa-yu peer eshitmasa, muammo
-                                tarmoq/negotiation'da. */}
-                            {call.state === 'connected' && (
-                                <div className="self-start flex items-center gap-3 rounded-xl bg-black/50 border border-white/5 px-3 py-1.5 backdrop-blur-md">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[9px] font-semibold text-white/60 w-8">Siz</span>
-                                        <div className="h-1.5 w-14 rounded-full bg-white/10 overflow-hidden">
-                                            <div
-                                                className="h-full bg-emerald-400 transition-all duration-100"
-                                                style={{width: `${Math.round(localLevel * 100)}%`}}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[9px] font-semibold text-white/60 w-10">{call.peerName.split(' ')[0]}</span>
-                                        <div className="h-1.5 w-14 rounded-full bg-white/10 overflow-hidden">
-                                            <div
-                                                className="h-full bg-indigo-400 transition-all duration-100"
-                                                style={{width: `${Math.round(remoteLevel * 100)}%`}}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Media xatoliklari */}
                             {mediaError && (
                                 <div className="mx-auto max-w-xs rounded-xl bg-red-500/80 px-3 py-2 text-center text-xs font-semibold text-white backdrop-blur-md shadow-md">
