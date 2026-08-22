@@ -12,10 +12,6 @@
 //   • Offer FAQAT connected/callId/pc/localStream mavjud bo'lganda
 //     yaratiladi — bu onnegotiationneeded orqali tabiiy ravishda ta'minlanadi,
 //     chunki track faqat pc yaratilgandan keyin qo'shiladi (Problem 8)
-//   • RACE FIX: OFFER/ANSWER/ICE pc yaratilishidan OLDIN kelib qolsa ham
-//     (mobil qurilmalarda getUserMedia sekinroq bo'lishi mumkin), signal
-//     yo'qolib ketmaydi — earlySignalQueueRef orqali navbatga qo'yiladi va
-//     pc tayyor bo'lgach qayta ishlanadi.
 //
 // CallOverlay bu hook'ni chaqiradi va FAQAT UI render qiladi — o'zi
 // PeerConnection yaratmaydi, socket'ga obuna bo'lmaydi (Problem 12).
@@ -25,12 +21,28 @@ import {chatSocket} from '../lib/chatSocket'
 import type {SignalMessage} from '../lib/chatTypes'
 import type {SerializedIceCandidate} from '../lib/callTypes'
 
+// STUN — barcha holatlarda ishlaydi.
+// TURN — bepul OpenRelay (Metered.ca). Public/shared credential, shuning
+// uchun faqat zaxira sifatida (NAT/firewall orqasidagi foydalanuvchilar
+// uchun). Productionda o'z TURN serveringiz yoki pullik provayder tavsiya
+// etiladi.
 const ICE_SERVERS: RTCIceServer[] = [
-    {urls: 'stun:turn.livelingo.uz:3478'},
+    {urls: 'stun:stun.l.google.com:19302'},
+    {urls: 'stun:openrelay.metered.ca:80'},
     {
-        urls: 'turn:turn.livelingo.uz:3478',
-        username: 'livelingo',
-        credential: 'qGzHnirK9xLKiyYn75SbfuK1d/c3Fxq/',
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+    },
+    {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+    },
+    {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
     },
 ]
 
@@ -125,14 +137,6 @@ export function useWebRTC({
     // ── ICE candidate queue (Problem 9) ──
     const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
 
-    // ── "Erta kelgan" signal navbati (RACE FIX) ──
-    // pc hali yaratilmagan bo'lsa ham (getUserMedia/RTCPeerConnection
-    // asinxron tayyorlanmoqda), OFFER/ANSWER/ICE signallari yo'qolib
-    // ketmasin uchun shu yerga navbatga qo'yiladi, pc tayyor bo'lgach
-    // qayta ishlanadi.
-    const earlySignalQueueRef = useRef<SignalMessage[]>([])
-    const pcReadyRef = useRef(false)
-
     const flushPendingCandidates = useCallback(async (pc: RTCPeerConnection) => {
         const queued = pendingCandidatesRef.current.splice(0)
         for (const cand of queued) {
@@ -162,8 +166,6 @@ export function useWebRTC({
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
 
         pendingCandidatesRef.current = []
-        earlySignalQueueRef.current = []
-        pcReadyRef.current = false
         makingOfferRef.current = false
         ignoreOfferRef.current = false
         isSettingRemoteAnswerPendingRef.current = false
@@ -260,14 +262,6 @@ export function useWebRTC({
                 }
 
                 setConnectionState('new')
-
-                // ── pc endi tayyor — shu vaqt oralig'ida "erta kelgan"
-                // signallar bo'lsa, ularni endi qayta ishlaymiz (RACE FIX) ──
-                pcReadyRef.current = true
-                const queued = earlySignalQueueRef.current.splice(0)
-                for (const sig of queued) {
-                    await processSignalRef.current?.(sig)
-                }
             } catch (err) {
                 if (!cancelled) {
                     setMediaError(
@@ -287,14 +281,13 @@ export function useWebRTC({
     }, [enabled])
 
     // ── Signalizatsiya qabul qilish: OFFER / ANSWER / ICE (Problem 4, 9, 10) ──
-    // processSignal — pc ustida ishlaydigan asosiy mantiq. Bu ref orqali
-    // saqlanadi, shunda setup() ichidan (pc tayyor bo'lgan zahoti, navbatni
-    // bo'shatishda) ham, quyidagi jonli subscribe handler ichidan ham bir
-    // xil funksiya chaqiriladi (RACE FIX — signal yo'qolib ketmaydi).
-    const processSignalRef = useRef<((sig: SignalMessage) => Promise<void>) | null>(null)
-
     useEffect(() => {
-        processSignalRef.current = async (sig: SignalMessage) => {
+        if (!enabled) return
+
+        const unsub = chatSocket.subscribe(async (sig: SignalMessage) => {
+            // Har doim callIdRef'dan o'qiymiz — closure eskirgan bo'lsa ham
+            // muammo yo'q (Problem 4).
+            if (!sig.callId || sig.callId !== callIdRef.current) return
             const pc = pcRef.current
             if (!pc) return
 
@@ -340,26 +333,6 @@ export function useWebRTC({
             } catch (err) {
                 console.warn('WebRTC signal xatosi', err)
             }
-        }
-    }, [flushPendingCandidates])
-
-    useEffect(() => {
-        if (!enabled) return
-
-        const unsub = chatSocket.subscribe(async (sig: SignalMessage) => {
-            // Har doim callIdRef'dan o'qiymiz — closure eskirgan bo'lsa ham
-            // muammo yo'q (Problem 4).
-            if (!sig.callId || sig.callId !== callIdRef.current) return
-
-            // RACE FIX: pc hali tayyor bo'lmasa (getUserMedia/RTCPeerConnection
-            // hali asinxron tayyorlanmoqda), signalni YO'QOTMASDAN navbatga
-            // qo'yamiz — pc tayyor bo'lgach setup() ichida qayta ishlanadi.
-            if (!pcReadyRef.current) {
-                earlySignalQueueRef.current.push(sig)
-                return
-            }
-
-            await processSignalRef.current?.(sig)
         })
 
         return unsub
