@@ -75,9 +75,6 @@ interface UseWebRTCResult {
     facingMode: 'user' | 'environment'
     canSwitchCamera: boolean
     switchCamera: () => void
-    // ── Audio-level diagnostikasi (Problem: bir tomonlama ovoz) ──
-    localLevel: number
-    remoteLevel: number
 }
 
 function parseCandidate(raw: SerializedIceCandidate): RTCIceCandidateInit {
@@ -106,27 +103,11 @@ export function useWebRTC({
     const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
     const [canSwitchCamera, setCanSwitchCamera] = useState(false)
 
-    // ── Audio darajasi indikatorlari (Problem: "laptopdan ovoz kelmayapti"
-    // diagnostikasi) ──
-    // localLevel — o'z mikrofonimiz qanchalik signal ushlab turganini
-    // ko'rsatadi (agar bu 0 bo'lib qolsa — muammo mikrofon CAPTURE
-    // bosqichida, ya'ni OS/drayver darajasida). remoteLevel — peer'dan
-    // real vaqtda qancha audio KELAYOTGANINI ko'rsatadi (agar bu 0
-    // bo'lsa — muammo tarmoq/negotiation bosqichida, mikrofonda emas).
-    const [localLevel, setLocalLevel] = useState(0)
-    const [remoteLevel, setRemoteLevel] = useState(0)
-
     const localVideoRef = useRef<HTMLVideoElement>(null)
     const remoteVideoRef = useRef<HTMLVideoElement>(null)
     const localStreamRef = useRef<MediaStream | null>(null)
     const pcRef = useRef<RTCPeerConnection | null>(null)
     const facingModeRef = useRef<'user' | 'environment'>('user')
-
-    // Audio-level o'lchash uchun Web Audio node'lari
-    const audioCtxRef = useRef<AudioContext | null>(null)
-    const localAnalyserRef = useRef<AnalyserNode | null>(null)
-    const remoteAnalyserRef = useRef<AnalyserNode | null>(null)
-    const levelIntervalRef = useRef<number | null>(null)
     const statsIntervalRef = useRef<number | null>(null)
 
     // ── Har doim eng so'nggi qiymatlarni ushlab turuvchi ref'lar ──
@@ -181,28 +162,6 @@ export function useWebRTC({
         }
     }, [])
 
-    // Berilgan audio trekka Web Audio AnalyserNode ulab, uning real vaqtdagi
-    // signal darajasini o'lchash imkonini beradi (diagnostika: "capture"
-    // ishlayaptimi yoki yo'qmi shuni ko'rsatadi).
-    const attachAnalyser = useCallback((track: MediaStreamTrack) => {
-        try {
-            let ctx = audioCtxRef.current
-            if (!ctx || ctx.state === 'closed') {
-                ctx = new (window.AudioContext || (window as unknown as {webkitAudioContext: typeof AudioContext}).webkitAudioContext)()
-                audioCtxRef.current = ctx
-            }
-            if (ctx.state === 'suspended') ctx.resume().catch(() => {})
-            const source = ctx.createMediaStreamSource(new MediaStream([track]))
-            const analyser = ctx.createAnalyser()
-            analyser.fftSize = 512
-            analyser.smoothingTimeConstant = 0.5
-            source.connect(analyser)
-            return analyser
-        } catch {
-            return null
-        }
-    }, [])
-
     const stopInternal = useCallback(() => {
         const pc = pcRef.current
 
@@ -240,22 +199,10 @@ export function useWebRTC({
         if (localVideoRef.current) localVideoRef.current.srcObject = null
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
 
-        if (levelIntervalRef.current) {
-            window.clearInterval(levelIntervalRef.current)
-            levelIntervalRef.current = null
-        }
         if (statsIntervalRef.current) {
             window.clearInterval(statsIntervalRef.current)
             statsIntervalRef.current = null
         }
-        localAnalyserRef.current = null
-        remoteAnalyserRef.current = null
-        if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-            audioCtxRef.current.close().catch(() => {})
-        }
-        audioCtxRef.current = null
-        setLocalLevel(0)
-        setRemoteLevel(0)
 
         pendingCandidatesRef.current = []
         earlySignalQueueRef.current = []
@@ -352,14 +299,6 @@ export function useWebRTC({
                 localStreamRef.current = stream
                 if (localVideoRef.current) localVideoRef.current.srcObject = stream
 
-                // Mikrofon signal darajasini o'lchash uchun analyser
-                // ulaymiz — bu CallOverlay'da "mic level" indikatori
-                // sifatida ko'rsatiladi va foydalanuvchi darhol o'z ovozi
-                // ushlanayotganini yoki yo'qligini ko'radi.
-                if (audioTrack) {
-                    localAnalyserRef.current = attachAnalyser(audioTrack)
-                }
-
                 // Nechta kamera mavjudligini aniqlaymiz — faqat bittadan
                 // ko'p bo'lsa "old/orqa" almashtirish tugmasi ko'rsatiladi.
                 try {
@@ -389,12 +328,6 @@ export function useWebRTC({
                 pc.ontrack = (e) => {
                     if (remoteVideoRef.current && e.streams[0]) {
                         remoteVideoRef.current.srcObject = e.streams[0]
-                    }
-                    // Peer'dan kelayotgan audio darajasini ham o'lchaymiz —
-                    // agar bu doim 0 bo'lib qolsa, muammo tarmoq/negotiation
-                    // bosqichida (mikrofonning o'zida emas).
-                    if (e.track.kind === 'audio') {
-                        remoteAnalyserRef.current = attachAnalyser(e.track)
                     }
                 }
 
@@ -475,26 +408,6 @@ export function useWebRTC({
                 }
 
                 setConnectionState('new')
-
-                // ── Audio-level o'lchash sikli ──
-                // Har 150ms'da mavjud analyser'lardan RMS darajasini hisoblab,
-                // 0..1 oralig'ida state'ga yozamiz — CallOverlay buni kichik
-                // "level bar" sifatida ko'rsatadi.
-                const computeLevel = (analyser: AnalyserNode | null): number => {
-                    if (!analyser) return 0
-                    const data = new Uint8Array(analyser.fftSize)
-                    analyser.getByteTimeDomainData(data)
-                    let sumSquares = 0
-                    for (let i = 0; i < data.length; i++) {
-                        const norm = (data[i] - 128) / 128
-                        sumSquares += norm * norm
-                    }
-                    return Math.min(1, Math.sqrt(sumSquares / data.length) * 4)
-                }
-                levelIntervalRef.current = window.setInterval(() => {
-                    setLocalLevel(computeLevel(localAnalyserRef.current))
-                    setRemoteLevel(computeLevel(remoteAnalyserRef.current))
-                }, 150)
 
                 // ── pc endi tayyor — shu vaqt oralig'ida "erta kelgan"
                 // signallar bo'lsa, ularni endi qayta ishlaymiz (RACE FIX) ──
@@ -773,7 +686,5 @@ export function useWebRTC({
         facingMode,
         canSwitchCamera,
         switchCamera,
-        localLevel,
-        remoteLevel,
     }
 }
