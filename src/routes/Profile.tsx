@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DashboardNav, Sidebar, MobileNav } from '../components/AppShell'
 import Avatar from '../components/Avatar'
+import VerifiedBadge from '../components/VerifiedBadge'
 import PostGrid from '../components/PostGrid'
 import FollowListModal from '../components/FollowListModal'
 import AvatarActionModal from '../components/AvatarActionModal'
@@ -336,6 +337,7 @@ function ProfileContent({
         <div className="flex-1 text-center sm:text-left">
           <div className="flex items-center justify-center gap-1.5 sm:justify-start">
             <h1 className="font-display text-2xl font-bold text-ink">{displayTitle}</h1>
+            <VerifiedBadge username={profile.username} />
             {!isOwnProfile && (
               <OtherUserMenu blocked={blocked} onBlockClick={onBlockClick} onReportClick={onReportClick} />
             )}
