@@ -6,6 +6,7 @@
 import {useEffect, useState} from 'react'
 import {Link} from 'react-router-dom'
 import Avatar from './Avatar'
+import VerifiedBadge from './VerifiedBadge'
 import {type FollowUser, profileApi, type SuggestedUser,} from '../lib/profileApi'
 
 type Mode = 'followers' | 'following'
@@ -226,10 +227,19 @@ export function SuggestedUserRow({
     return (
         <div className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-cream">
             <Link to={`/profile/${user.id}`} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3">
-                <Avatar url={user.avatar} size={40}/>
+                               <Avatar url={user.avatar} size={40}/>
                 <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-ink">{user.name}</p>
-                    {user.region && <p className="truncate text-[11px] text-ink-muted">{user.region}</p>}
+                    {user.username && (
+                        <div className="flex items-center gap-1 min-w-0">
+                            <p className="truncate text-sm font-medium text-ink">@{user.username}</p>
+                            <VerifiedBadge username={user.username} size={13} />
+                        </div>
+                    )}
+                    {(user.name || user.lastName) && (
+                        <p className="truncate text-[11px] text-ink-muted">
+                            {`${user.name ?? ''} ${user.lastName ?? ''}`.trim()}
+                        </p>
+                    )}
                 </div>
             </Link>
             {checked && (
