@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Logo from './Logo'
 import Avatar from './Avatar'
+import VerifiedBadge from './VerifiedBadge'
 import { clearToken } from '../lib/auth'
 import { chatSocket } from '../lib/chatSocket'
 import { stopAccountStatusChecker } from '../lib/accountStatus'
@@ -921,8 +922,9 @@ function OwnProfileCard() {
                     {fullName}
                 </p>
                 {profile.username && (
-                    <p className="truncate text-xs text-ink-muted">
+                    <p className="flex items-center gap-1 truncate text-xs text-ink-muted">
                         @{profile.username}
+                        <VerifiedBadge username={profile.username} size={12} />
                     </p>
                 )}
             </div>
