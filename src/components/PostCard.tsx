@@ -21,6 +21,7 @@ import { chatSocket } from '../lib/chatSocket'
 import type { SignalMessage } from '../lib/chatTypes'
 import ShareModal from './ShareModal'
 import Avatar from './Avatar'
+import VerifiedBadge from './VerifiedBadge'
 
 export default function PostCard({
   post,
@@ -254,6 +255,7 @@ export default function PostCard({
               <p className="font-semibold text-ink transition-colors group-hover:text-indigo-600">
                 {post.authorName}
               </p>
+              <VerifiedBadge username={post.username} size={14} />
               {post.cefrLevel && <span className="pill text-[10px]">{post.cefrLevel}</span>}
             </div>
             <p className="text-xs text-ink-muted">
