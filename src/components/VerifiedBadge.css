@@ -1,0 +1,241 @@
+/* ============================================================
+   Common
+   ============================================================ */
+
+.verified-badge,
+.official-badge {
+  display: inline-flex;
+  position: relative;
+  flex-shrink: 0;
+  vertical-align: middle;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   Instagram-style verified badge
+   ============================================================ */
+
+.verified-badge svg {
+  display: block;
+}
+
+/* ============================================================
+   Official LiveLingo Premium Star
+   ============================================================ */
+
+.official-badge {
+  overflow: visible;
+}
+
+.official-star {
+  display: block;
+  overflow: visible;
+  transform-origin: center;
+  animation:
+    official-star-float 2.8s ease-in-out infinite,
+    official-star-glow 2.2s ease-in-out infinite;
+}
+
+/* Main star */
+
+.star-main {
+  transform-origin: center;
+  animation: star-breathe 2.4s ease-in-out infinite;
+}
+
+/* ============================================================
+   Sparkles
+   ============================================================ */
+
+.star-sparkles {
+  overflow: visible;
+}
+
+.sparkle,
+.sparkle-dot {
+  fill: #9f8cff;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Individual sparkle animations */
+
+.sparkle-1 {
+  animation: sparkle-1 2.2s ease-in-out infinite;
+}
+
+.sparkle-2 {
+  animation: sparkle-2 2.7s ease-in-out infinite;
+}
+
+.sparkle-3 {
+  animation: sparkle-3 2.4s ease-in-out infinite;
+}
+
+.sparkle-4 {
+  animation: sparkle-dot-1 1.9s ease-in-out infinite;
+}
+
+.sparkle-5 {
+  animation: sparkle-dot-2 2.5s ease-in-out infinite;
+}
+
+/* ============================================================
+   Star animation
+   ============================================================ */
+
+@keyframes official-star-float {
+  0%,
+  100% {
+    transform: rotate(-2deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(2deg) scale(1.06);
+  }
+}
+
+@keyframes star-breathe {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes official-star-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 1px rgba(150, 110, 255, 0.25));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 3px rgba(150, 110, 255, 0.65));
+  }
+}
+
+/* ============================================================
+   Sparkle animations
+   ============================================================ */
+
+@keyframes sparkle-1 {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+
+  25% {
+    opacity: 1;
+    transform: scale(1) rotate(20deg);
+  }
+
+  55% {
+    opacity: 0.9;
+    transform: scale(0.8) rotate(45deg);
+  }
+
+  75% {
+    opacity: 0;
+    transform: scale(0.3) rotate(70deg);
+  }
+}
+
+@keyframes sparkle-2 {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
+  }
+
+  35% {
+    opacity: 1;
+    transform: scale(1) rotate(30deg);
+  }
+
+  65% {
+    opacity: 0.8;
+    transform: scale(0.7) rotate(60deg);
+  }
+
+  85% {
+    opacity: 0;
+    transform: scale(0.2) rotate(90deg);
+  }
+}
+
+@keyframes sparkle-3 {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  30% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  60% {
+    opacity: 0.9;
+    transform: scale(0.65);
+  }
+
+  80% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+
+@keyframes sparkle-dot-1 {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  70% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+@keyframes sparkle-dot-2 {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+
+  80% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+
+/* ============================================================
+   Accessibility
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .official-star,
+  .star-main,
+  .sparkle,
+  .sparkle-dot {
+    animation: none !important;
+  }
+}
