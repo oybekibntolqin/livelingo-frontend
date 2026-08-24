@@ -59,8 +59,14 @@ export function GhostAvatar({
   )
 }
 
-// Referens rasmdagi kabi: to'q kulrang fon, ochroq kulrang odam
-// silueti (bosh + yelka).
+// Referens rasmdagi kabi: to'q kulrang fon + ochroq rangli, KONTUR
+// (stroke) uslubidagi odam siluet. MUHIM: avval "bosh" qismi TO'LIQ
+// RANGLI (filled) alohida doira sifatida chizilgan edi — bu kichik
+// o'lchamda (masalan 40px, "People to follow" ro'yxatida) ikkita
+// ALOHIDA DOIRA bo'lib ko'rinib, foydalanuvchilarga "ikkita avatar"
+// degan noto'g'ri taassurot qoldirardi. Endi bosh+yelka BITTA ochiq
+// (stroke) chiziq sifatida chizilgan — hech qachon alohida "doira"
+// bo'lib o'qilmaydi.
 export function DefaultAvatar({
   size = 96,
   className = '',
@@ -76,11 +82,10 @@ export function DefaultAvatar({
       className={`flex-shrink-0 rounded-full ${className}`}
     >
       <circle cx="48" cy="48" r="48" fill="#3A3A42" />
-      <circle cx="48" cy="38" r="16" fill="#6B6B76" />
-      <path
-        d="M16 88c2-18 16-30 32-30s30 12 32 30"
-        fill="#6B6B76"
-      />
+      <g stroke="#9A9AA6" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <circle cx="48" cy="39" r="11" />
+        <path d="M25 79c2.5-15.5 11.5-24.5 23-24.5s20.5 9 23 24.5" />
+      </g>
     </svg>
   )
 }
