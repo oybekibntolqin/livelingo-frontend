@@ -53,8 +53,10 @@ export interface FollowUser {
 
 // GET /api/users — UserListDTO, "suggested users" uchun ishlatiladi.
 export interface SuggestedUser {
-  id: string
+ id: string
   name: string
+  lastName?: string | null
+  username?: string | null
   bio: string | null
   region: string | null
   gender: string | null

@@ -54,6 +54,7 @@ export interface PostComment {
   authorId: string
   authorFirstName: string
   authorLastName: string
+  authorUsername?: string | null
   authorProfileDTO: PostAuthorAttachment | null
   content: string
   edited: boolean

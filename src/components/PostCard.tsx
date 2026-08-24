@@ -21,6 +21,7 @@ import { chatSocket } from '../lib/chatSocket'
 import type { SignalMessage } from '../lib/chatTypes'
 import ShareModal from './ShareModal'
 import Avatar from './Avatar'
+import VerifiedBadge from './VerifiedBadge'
 
 export default function PostCard({
   post,
@@ -254,6 +255,7 @@ export default function PostCard({
               <p className="font-semibold text-ink transition-colors group-hover:text-indigo-600">
                 {post.authorName}
               </p>
+              <VerifiedBadge username={post.username} size={14} />
               {post.cefrLevel && <span className="pill text-[10px]">{post.cefrLevel}</span>}
             </div>
             <p className="text-xs text-ink-muted">
@@ -377,6 +379,7 @@ export default function PostCard({
                       >
                         {c.authorFirstName} {c.authorLastName}
                       </Link>
+                      <VerifiedBadge username={c.authorUsername} size={12} />
                       {c._pending && (
                         <span className="inline-flex items-center gap-1 text-[10px] text-ink-muted">
                           <svg className="h-2.5 w-2.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -706,10 +709,6 @@ function PostMenu({
   }, [open])
 
   const handleDelete = async () => {
-
-    console.log('[PostMenu] 2-DELETE (tasdiqlash ichidagi, QIZIL) bosildi — so\'rov yuborilyapti');
-    console.log("POST ID", post.id);
-
     deletingRef.current = true
     setDeleting(true)
     setDeleteError(null)
@@ -755,16 +754,11 @@ function PostMenu({
     }
   }
 
-  console.log('[PostMenu] RENDER — open=', open, 'confirmDelete=', confirmDelete, 'menuPos=', menuPos)
-
   return (
     <div className="relative" data-post-menu>
       <button
         ref={triggerRef}
-        onClick={() => {
-          console.log('[PostMenu] ⋮ bosildi, post.id=', post.id, 'isOwner=', isOwner)
-          openMenu()
-        }}
+        onClick={openMenu}
         className="rounded-full p-1.5 text-ink-muted transition hover:bg-cream hover:text-ink"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -787,7 +781,6 @@ function PostMenu({
               {isOwner && (
                 <button
                   onClick={() => {
-                    console.log('[PostMenu] 1-DELETE bosildi — tasdiqlash ko\'rsatilyapti')
                     setDeleteError(null)
                     setConfirmDelete(true)
                   }}
