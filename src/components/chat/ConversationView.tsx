@@ -16,6 +16,7 @@ import type {ChatListItem, ChatMessage, SignalMessage,} from '../../lib/chatType
 import MessageBubble from './MessageBubble'
 import MessageComposer from './MessageComposer'
 import Avatar from '../Avatar'
+import VerifiedBadge from '../VerifiedBadge'
 
 interface Props {
     myId: string
@@ -580,11 +581,12 @@ export default function ConversationView({
                 <div className="min-w-0 flex-1">
                     <Link
                         to={`/profile/${peer.userId}`}
-                        className={`block truncate font-display text-sm font-semibold transition-colors ${
+                        className={`flex items-center gap-1 truncate font-display text-sm font-semibold transition-colors ${
                             isDeleted ? 'text-ink-muted' : 'text-ink hover:text-indigo-600'
                         }`}
                     >
-                        {name}
+                        <span className="truncate">{name}</span>
+                        {!isSelfChat && !isDeleted && <VerifiedBadge username={peer.username} size={13} />}
                     </Link>
                     <p className="text-[11px] text-ink-muted">
                         {isDeleted ? (
