@@ -8,7 +8,6 @@
 // Yangi odamga bosilsa — onSelectNew chaqiriladi (bo'sh suhbat ochiladi).
 
 import { useEffect, useMemo, useRef, useState, type UIEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { chatApi } from '../../lib/chatApi'
 import type { ChatListItem, UserSearchResult } from '../../lib/chatTypes'
 import Avatar from '../Avatar'
@@ -308,13 +307,11 @@ function ChatRow({
         active ? 'bg-indigo-50' : 'hover:bg-cream'
       }`}
     >
-      <Link
-        to={`/profile/${userId}`}
-        // Avatar bosilganda faqat profilega o'tsin — chatni tanlash
-        // (row onClick) ishga tushmasligi uchun to'xtatamiz.
-        onClick={(e) => e.stopPropagation()}
-        className="relative flex-shrink-0"
-      >
+      {/* Avatar va ism — endi profilga OLIB BORMAYDI, faqat qatorning
+          o'zi (onClick) ishlaydi va chatni ochadi. Profilga o'tish
+          endi FAQAT ochilgan suhbat tepasidagi (ConversationView
+          header) ismga bosilganda ishlaydi. */}
+      <div className="relative flex-shrink-0">
         <Avatar url={photoUrl} size={44} deleted={deleted} />
         {!deleted && online && (
           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-mint-500" />
@@ -325,19 +322,17 @@ function ChatRow({
         {!deleted && !online && presenceHidden && (
           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-ink" />
         )}
-      </Link>
+      </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
-          <Link
-            to={`/profile/${userId}`}
-            onClick={(e) => e.stopPropagation()}
-            className={`truncate font-display text-sm font-semibold transition-colors ${
-              deleted ? 'text-ink-muted' : 'text-ink hover:text-indigo-600'
+          <p
+            className={`truncate font-display text-sm font-semibold ${
+              deleted ? 'text-ink-muted' : 'text-ink'
             }`}
           >
             {name}
-          </Link>
+          </p>
           {lastMessageTime && (
             <span className="flex-shrink-0 text-[10px] text-ink-muted">
               {formatListTime(lastMessageTime)}

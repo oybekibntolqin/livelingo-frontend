@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Logo from '../components/Logo'
@@ -43,46 +43,10 @@ interface CefrTestResult {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Certificate types relevant to each language. Languages we don't
-// have a national cert for fall back to GENERAL.
+// MUHIM O'ZGARISH: sertifikat tanlovi olib tashlandi — foydalanuvchi
+// endi IELTS/TOEFL/Goethe va h.k. tanlamaydi, tizim doim "GENERAL"
+// turini ishlatadi (bazada faqat shu tur uchun savollar mavjud).
 // ─────────────────────────────────────────────────────────────────
-const CERTS_BY_LANG: Record<string, { code: string; name: string; flag?: string }[]> = {
-  en: [
-    { code: 'IELTS', name: 'IELTS', flag: '🇬🇧' },
-    { code: 'TOEFL', name: 'TOEFL', flag: '🇺🇸' },
-    { code: 'CAMBRIDGE', name: 'Cambridge', flag: '🇬🇧' },
-    { code: 'GENERAL', name: 'General English' },
-  ],
-  de: [
-    { code: 'GOETHE', name: 'Goethe', flag: '🇩🇪' },
-    { code: 'TESTDAF', name: 'TestDaF', flag: '🇩🇪' },
-    { code: 'GENERAL', name: 'General German' },
-  ],
-  ko: [
-    { code: 'TOPIK', name: 'TOPIK', flag: '🇰🇷' },
-    { code: 'GENERAL', name: 'General Korean' },
-  ],
-  ja: [
-    { code: 'JLPT', name: 'JLPT', flag: '🇯🇵' },
-    { code: 'GENERAL', name: 'General Japanese' },
-  ],
-  fr: [
-    { code: 'DELF', name: 'DELF', flag: '🇫🇷' },
-    { code: 'GENERAL', name: 'General French' },
-  ],
-  es: [
-    { code: 'DELE', name: 'DELE', flag: '🇪🇸' },
-    { code: 'GENERAL', name: 'General Spanish' },
-  ],
-  zh: [
-    { code: 'HSK', name: 'HSK', flag: '🇨🇳' },
-    { code: 'GENERAL', name: 'General Chinese' },
-  ],
-  ru: [
-    { code: 'TORFL', name: 'TORFL', flag: '🇷🇺' },
-    { code: 'GENERAL', name: 'General Russian' },
-  ],
-}
 
 const LEVEL_TINT: Record<CefrLevel, { bg: string; text: string; ring: string }> = {
   A1: { bg: 'bg-mint-50', text: 'text-mint-600', ring: 'ring-mint-500/40' },
@@ -95,6 +59,53 @@ const LEVEL_TINT: Record<CefrLevel, { bg: string; text: string; ring: string }> 
 
 type Phase = 'setup' | 'loading' | 'testing' | 'submitting' | 'results'
 
+// ─────────────────────────────────────────────────────────────────
+// YANGI: sahifa refresh qilinganda test boshidan boshlanib qolmasligi
+// uchun, "testing" bosqichidagi holat (savollar, joriy savol raqami,
+// javoblar, boshlangan vaqt) localStorage'da saqlanadi. Til bo'yicha
+// alohida kalit ishlatiladi (bir vaqtda bir nechta tilni sinab
+// ko'rish holatini aralashtirib yubormaslik uchun).
+// ─────────────────────────────────────────────────────────────────
+interface PersistedProgress {
+  questions: CefrQuestion[]
+  currentIdx: number
+  answers: Record<string, string>
+  startedAt: number
+}
+
+function progressKey(lang: string) {
+  return `cefrTestProgress_v1_${lang}`
+}
+
+function loadProgress(lang: string): PersistedProgress | null {
+  try {
+    const raw = localStorage.getItem(progressKey(lang))
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as PersistedProgress
+    if (!parsed?.questions?.length) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function saveProgress(lang: string, data: PersistedProgress) {
+  try {
+    localStorage.setItem(progressKey(lang), JSON.stringify(data))
+  } catch {
+    // localStorage to'lgan yoki mavjud emas — jim o'tkazib yuboramiz,
+    // bu faqat "qulaylik" xususiyati, test ishlashiga ta'sir qilmaydi.
+  }
+}
+
+function clearProgress(lang: string) {
+  try {
+    localStorage.removeItem(progressKey(lang))
+  } catch {
+    /* jim */
+  }
+}
+
 export default function CefrTest() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -106,8 +117,6 @@ export default function CefrTest() {
   // this from the current user's profile.
   const learningLang = params.get('lang') || 'en'
 
-  const certs = CERTS_BY_LANG[learningLang] ?? [{ code: 'GENERAL', name: 'General' }]
-
   // Auth guard
   useEffect(() => {
     if (!isAuthenticated()) navigate('/sign-in', { replace: true })
@@ -115,12 +124,42 @@ export default function CefrTest() {
 
   const [phase, setPhase] = useState<Phase>('setup')
   const [error, setError] = useState<string | null>(null)
-  const [selectedCert, setSelectedCert] = useState<string>(certs[0]?.code ?? 'GENERAL')
+  // MUHIM O'ZGARISH: sertifikat tanlovi (IELTS/TOEFL/Cambridge) olib
+  // tashlandi — bazada faqat "GENERAL" turi uchun savollar mavjud
+  // bo'lgani sababli, boshqa turlarni tanlash doimo "savol topilmadi"
+  // xatosiga olib kelardi. Endi foydalanuvchi hech qanday tanlov
+  // qilmaydi — til tanlab bo'lingach, avtomatik "GENERAL" ishlatiladi.
+  const selectedCert = 'GENERAL'
 
   const [questions, setQuestions] = useState<CefrQuestion[]>([])
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [result, setResult] = useState<CefrTestResult | null>(null)
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+
+  // ── Sahifa birinchi ochilganda — avval saqlangan (tugallanmagan)
+  // test bor-yo'qligini tekshiramiz. Bo'lsa, "setup"dan boshlash
+  // o'rniga, to'g'ridan-to'g'ri "testing" bosqichiga, saqlangan
+  // savol/javoblar bilan qaytamiz.
+  useEffect(() => {
+    const saved = loadProgress(learningLang)
+    if (saved) {
+      setQuestions(saved.questions)
+      setCurrentIdx(saved.currentIdx)
+      setAnswers(saved.answers)
+      setStartedAt(saved.startedAt)
+      setPhase('testing')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Testing bosqichida har bir o'zgarishni (savol, javob) darhol
+  // localStorage'ga yozib boramiz — shunda refresh qilinganda
+  // hech narsa yo'qolmaydi.
+  useEffect(() => {
+    if (phase !== 'testing' || questions.length === 0 || startedAt === null) return
+    saveProgress(learningLang, { questions, currentIdx, answers, startedAt })
+  }, [phase, questions, currentIdx, answers, startedAt, learningLang])
 
   // ── Fetch questions and start test ─────────────────────────────
   const startTest = async () => {
@@ -138,6 +177,7 @@ export default function CefrTest() {
       setQuestions(qs)
       setCurrentIdx(0)
       setAnswers({})
+      setStartedAt(Date.now())
       setPhase('testing')
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -163,6 +203,11 @@ export default function CefrTest() {
         certificateType: selectedCert,
         answers,
       })
+      // Test muvaffaqiyatli topshirildi — saqlangan (tugallanmagan)
+      // holatni tozalaymiz, aks holda keyingi safar sahifaga
+      // kirganda eski, allaqachon topshirilgan testga qaytarib
+      // qo'yardi.
+      clearProgress(learningLang)
       setResult(data)
       setPhase('results')
     } catch (err) {
@@ -217,9 +262,6 @@ export default function CefrTest() {
           <SetupPhase
             key="setup"
             learningLang={learningLang}
-            certs={certs}
-            selectedCert={selectedCert}
-            onSelectCert={setSelectedCert}
             onStart={startTest}
             error={error}
           />
@@ -229,7 +271,7 @@ export default function CefrTest() {
           <LoadingPhase key="loading" message="Preparing your test…" />
         )}
 
-        {phase === 'testing' && (
+        {phase === 'testing' && startedAt !== null && (
           <TestingPhase
             key="testing"
             questions={questions}
@@ -239,6 +281,7 @@ export default function CefrTest() {
             setAnswers={setAnswers}
             onSubmit={submitTest}
             error={error}
+            startedAt={startedAt}
           />
         )}
 
@@ -265,16 +308,10 @@ export default function CefrTest() {
 // ─────────────────────────────────────────────────────────────────
 function SetupPhase({
   learningLang,
-  certs,
-  selectedCert,
-  onSelectCert,
   onStart,
   error,
 }: {
   learningLang: string
-  certs: { code: string; name: string; flag?: string }[]
-  selectedCert: string
-  onSelectCert: (c: string) => void
   onStart: () => void
   error: string | null
 }) {
@@ -297,37 +334,6 @@ function SetupPhase({
         We'll place you at the right CEFR level so you don't waste time on
         material that's too easy or too hard.
       </p>
-
-      <div className="mt-8">
-        <p className="mb-3 text-sm font-medium text-ink">Pick a certificate style</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {certs.map((c) => (
-            <button
-              key={c.code}
-              type="button"
-              onClick={() => onSelectCert(c.code)}
-              className={`flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all ${
-                selectedCert === c.code
-                  ? 'border-indigo-500 bg-indigo-50'
-                  : 'border-ink/10 bg-white hover:border-ink/30'
-              }`}
-            >
-              {c.flag && <span className="text-lg">{c.flag}</span>}
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm font-semibold ${selectedCert === c.code ? 'text-indigo-600' : 'text-ink'}`}>
-                  {c.name}
-                </p>
-                <p className="text-xs text-ink-muted">
-                  {c.code === 'GENERAL' ? 'No specific exam style' : 'Exam-style questions'}
-                </p>
-              </div>
-              {selectedCert === c.code && (
-                <span className="h-2 w-2 rounded-full bg-indigo-500" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {error && (
         <div className="mt-6 rounded-2xl border border-coral-500/30 bg-coral-50 p-4 text-sm text-coral-600">
@@ -380,6 +386,7 @@ function TestingPhase({
   setAnswers,
   onSubmit,
   error,
+  startedAt,
 }: {
   questions: CefrQuestion[]
   currentIdx: number
@@ -388,6 +395,7 @@ function TestingPhase({
   setAnswers: (a: Record<string, string>) => void
   onSubmit: () => void
   error: string | null
+  startedAt: number
 }) {
   const q = questions[currentIdx]
   const isLast = currentIdx === questions.length - 1
@@ -395,17 +403,17 @@ function TestingPhase({
   const progressPct = ((currentIdx + 1) / questions.length) * 100
 
   // Count-up timer — informational, no pressure / auto-submit.
-  const [elapsed, setElapsed] = useState(0)
-  const startRef = useRef<number | null>(null)
+  // MUHIM: startedAt endi TASHQARIDAN (ota-komponentdan) keladi va
+  // sahifa refresh qilinganda ham saqlanadi (localStorage orqali) —
+  // shuning uchun refresh qilinganda hisoblagich 0'dan emas, test
+  // haqiqatan boshlangan vaqtdan davom etadi.
+  const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startedAt) / 1000))
   useEffect(() => {
-    if (startRef.current === null) startRef.current = Date.now()
     const id = setInterval(() => {
-      if (startRef.current !== null) {
-        setElapsed(Math.floor((Date.now() - startRef.current) / 1000))
-      }
+      setElapsed(Math.floor((Date.now() - startedAt) / 1000))
     }, 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [startedAt])
 
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')

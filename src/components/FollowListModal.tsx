@@ -224,10 +224,9 @@ export function SuggestedUserRow({
         }
     }
 
-    return (
+        return (
         <div className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-cream">
             <Link to={`/profile/${user.id}`} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3">
-                               <Avatar url={user.avatar} size={40}/>
                 <Avatar url={user.avatar} size={40}/>
                 <div className="min-w-0">
                     {user.username && (

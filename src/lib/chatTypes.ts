@@ -125,6 +125,7 @@ export interface ChatListItem {
     userId: string
     firstName: string
     lastName: string
+    username?: string | null
     profilePhotoUrl?: string | null
     online: boolean
     // Ko'ring: backend PresenceVisibilityService
