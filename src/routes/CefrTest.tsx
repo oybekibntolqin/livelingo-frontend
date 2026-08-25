@@ -43,46 +43,10 @@ interface CefrTestResult {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Certificate types relevant to each language. Languages we don't
-// have a national cert for fall back to GENERAL.
+// MUHIM O'ZGARISH: sertifikat tanlovi olib tashlandi — foydalanuvchi
+// endi IELTS/TOEFL/Goethe va h.k. tanlamaydi, tizim doim "GENERAL"
+// turini ishlatadi (bazada faqat shu tur uchun savollar mavjud).
 // ─────────────────────────────────────────────────────────────────
-const CERTS_BY_LANG: Record<string, { code: string; name: string; flag?: string }[]> = {
-  en: [
-    { code: 'IELTS', name: 'IELTS', flag: '🇬🇧' },
-    { code: 'TOEFL', name: 'TOEFL', flag: '🇺🇸' },
-    { code: 'CAMBRIDGE', name: 'Cambridge', flag: '🇬🇧' },
-    { code: 'GENERAL', name: 'General English' },
-  ],
-  de: [
-    { code: 'GOETHE', name: 'Goethe', flag: '🇩🇪' },
-    { code: 'TESTDAF', name: 'TestDaF', flag: '🇩🇪' },
-    { code: 'GENERAL', name: 'General German' },
-  ],
-  ko: [
-    { code: 'TOPIK', name: 'TOPIK', flag: '🇰🇷' },
-    { code: 'GENERAL', name: 'General Korean' },
-  ],
-  ja: [
-    { code: 'JLPT', name: 'JLPT', flag: '🇯🇵' },
-    { code: 'GENERAL', name: 'General Japanese' },
-  ],
-  fr: [
-    { code: 'DELF', name: 'DELF', flag: '🇫🇷' },
-    { code: 'GENERAL', name: 'General French' },
-  ],
-  es: [
-    { code: 'DELE', name: 'DELE', flag: '🇪🇸' },
-    { code: 'GENERAL', name: 'General Spanish' },
-  ],
-  zh: [
-    { code: 'HSK', name: 'HSK', flag: '🇨🇳' },
-    { code: 'GENERAL', name: 'General Chinese' },
-  ],
-  ru: [
-    { code: 'TORFL', name: 'TORFL', flag: '🇷🇺' },
-    { code: 'GENERAL', name: 'General Russian' },
-  ],
-}
 
 const LEVEL_TINT: Record<CefrLevel, { bg: string; text: string; ring: string }> = {
   A1: { bg: 'bg-mint-50', text: 'text-mint-600', ring: 'ring-mint-500/40' },
@@ -106,8 +70,6 @@ export default function CefrTest() {
   // this from the current user's profile.
   const learningLang = params.get('lang') || 'en'
 
-  const certs = CERTS_BY_LANG[learningLang] ?? [{ code: 'GENERAL', name: 'General' }]
-
   // Auth guard
   useEffect(() => {
     if (!isAuthenticated()) navigate('/sign-in', { replace: true })
@@ -115,7 +77,12 @@ export default function CefrTest() {
 
   const [phase, setPhase] = useState<Phase>('setup')
   const [error, setError] = useState<string | null>(null)
-  const [selectedCert, setSelectedCert] = useState<string>(certs[0]?.code ?? 'GENERAL')
+  // MUHIM O'ZGARISH: sertifikat tanlovi (IELTS/TOEFL/Cambridge) olib
+  // tashlandi — bazada faqat "GENERAL" turi uchun savollar mavjud
+  // bo'lgani sababli, boshqa turlarni tanlash doimo "savol topilmadi"
+  // xatosiga olib kelardi. Endi foydalanuvchi hech qanday tanlov
+  // qilmaydi — til tanlab bo'lingach, avtomatik "GENERAL" ishlatiladi.
+  const selectedCert = 'GENERAL'
 
   const [questions, setQuestions] = useState<CefrQuestion[]>([])
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -217,9 +184,6 @@ export default function CefrTest() {
           <SetupPhase
             key="setup"
             learningLang={learningLang}
-            certs={certs}
-            selectedCert={selectedCert}
-            onSelectCert={setSelectedCert}
             onStart={startTest}
             error={error}
           />
@@ -265,16 +229,10 @@ export default function CefrTest() {
 // ─────────────────────────────────────────────────────────────────
 function SetupPhase({
   learningLang,
-  certs,
-  selectedCert,
-  onSelectCert,
   onStart,
   error,
 }: {
   learningLang: string
-  certs: { code: string; name: string; flag?: string }[]
-  selectedCert: string
-  onSelectCert: (c: string) => void
   onStart: () => void
   error: string | null
 }) {
@@ -297,37 +255,6 @@ function SetupPhase({
         We'll place you at the right CEFR level so you don't waste time on
         material that's too easy or too hard.
       </p>
-
-      <div className="mt-8">
-        <p className="mb-3 text-sm font-medium text-ink">Pick a certificate style</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {certs.map((c) => (
-            <button
-              key={c.code}
-              type="button"
-              onClick={() => onSelectCert(c.code)}
-              className={`flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all ${
-                selectedCert === c.code
-                  ? 'border-indigo-500 bg-indigo-50'
-                  : 'border-ink/10 bg-white hover:border-ink/30'
-              }`}
-            >
-              {c.flag && <span className="text-lg">{c.flag}</span>}
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm font-semibold ${selectedCert === c.code ? 'text-indigo-600' : 'text-ink'}`}>
-                  {c.name}
-                </p>
-                <p className="text-xs text-ink-muted">
-                  {c.code === 'GENERAL' ? 'No specific exam style' : 'Exam-style questions'}
-                </p>
-              </div>
-              {selectedCert === c.code && (
-                <span className="h-2 w-2 rounded-full bg-indigo-500" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {error && (
         <div className="mt-6 rounded-2xl border border-coral-500/30 bg-coral-50 p-4 text-sm text-coral-600">
