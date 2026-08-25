@@ -31,6 +31,15 @@ export default function Chat() {
     const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set())
     const [socketReady, setSocketReady] = useState(false)
 
+    // MUHIM (Problem 2 fix uchun kerak): WebSocket signal handler'ning
+    // closure'i eskirib qolmasligi uchun (ref orqali doim eng so'nggi
+    // qiymatni o'qiymiz — signal handler effect faqat [loadList] ga bog'liq,
+    // activePeerId o'zgarishida qayta yaratilmaydi).
+    const activePeerIdRef = useRef<string | null>(null)
+    useEffect(() => {
+        activePeerIdRef.current = activePeerId
+    }, [activePeerId])
+
     const activePeer = chats.find((c) => c.userId === activePeerId) ?? null
 
     const handleSelectNewUser = useCallback(
@@ -143,7 +152,30 @@ export default function Chat() {
                   ]
                 : withSelf
 
-            setChats(pinned)
+            // MUHIM FIX (Problem 1: "Profildan Message bosilganda suhbat
+            // ochilmay, qidiruvga qaytarib qo'yishi"):
+            // Avval bu yerda `setChats(pinned)` serverdan kelgan ro'yxatni
+            // TO'LIQ almashtirar edi. Agar foydalanuvchi profildan "Message"
+            // bosgan bo'lsa, `handleSelectNewUser` allaqachon shu odam uchun
+            // vaqtinchalik "stub" yozuvni ro'yxat boshiga qo'shib bo'lgan va
+            // `activePeerId`ni shunga o'rnatgan bo'ladi — lekin bu odam bilan
+            // hali haqiqiy xabar almashinmagani uchun backend uni
+            // /api/chats/list javobida hali qaytarmaydi. Component mount
+            // bo'lishi bilan ishga tushadigan `loadList()` keyinroq (server
+            // javobi kelgach) `setChats(pinned)` chaqirsa, bu stub yozuv
+            // ro'yxatdan butunlay YO'QOLIB QOLARDI — natijada
+            // `activePeerId` hech narsaga mos kelmay qolib, suhbat ekrani
+            // "tanlanmagan" holatga qaytardi (garchi foydalanuvchi allaqachon
+            // "Message"ni bosgan bo'lsa ham).
+            //
+            // Yechim: serverdan kelmagan, lekin lokal ro'yxatda mavjud bo'lgan
+            // (hali persist qilinmagan) yozuvlarni saqlab qolamiz — ular
+            // ro'yxat boshiga, server natijalaridan oldin qo'shiladi.
+            setChats((prev) => {
+                const serverIds = new Set(pinned.map((c) => c.userId))
+                const localOnlyStubs = prev.filter((c) => !serverIds.has(c.userId))
+                return [...localOnlyStubs, ...pinned]
+            })
             setHasMoreChats(hasMore)
             setOnlineIds((prev) => {
                 const next = new Set(prev)
@@ -240,7 +272,37 @@ export default function Chat() {
                 case 'END':
                 case 'MISSED':
                 case 'USER_BUSY':
-                    loadList()
+                    loadList().then(() => {
+                        // MUHIM FIX (Problem 2: "qo'ng'iroq tugagach shu
+                        // suhbat ochiq turgan bo'lsa ham xabar o'qilmagan
+                        // bo'lib qolishi"):
+                        // Bu xabar (masalan CALL_ENDED) backend tomonidan
+                        // 'CHAT' turidagi signal sifatida ikkala tomonga ham
+                        // yuboriladi. Aynan shu vaqtda ConversationView (agar
+                        // ochiq bo'lsa) alohida, ASINXRON ravishda backend'ga
+                        // "CHAT_SEEN" signalini yuboradi. Muammo shundaki,
+                        // yuqoridagi loadList() server javobi ko'pincha o'sha
+                        // CHAT_SEEN backend tomonidan qayta ishlanishidan
+                        // OLDINROQ kelib qoladi — natijada serverdan hali
+                        // "o'qilmagan" (unreadCount > 0) holat qaytadi va buni
+                        // hech kim keyinchalik tuzatmaydi (chunki boshqa
+                        // hech qanday keyingi loadList() chaqirilmaydi).
+                        //
+                        // Yechim: suhbat HOZIR aynan ochiq turgan bo'lsa,
+                        // uning unreadCount'ini serverdan qat'i nazar,
+                        // darhol lokal 0'ga tushiramiz — chunki foydalanuvchi
+                        // uni allaqachon jonli ko'rib turibdi.
+                        const relatedPeerId = sig.from === myId ? sig.to : sig.from
+                        if (relatedPeerId && relatedPeerId === activePeerIdRef.current) {
+                            setChats((prev) =>
+                                prev.map((c) =>
+                                    c.userId === relatedPeerId && c.unreadCount
+                                        ? { ...c, unreadCount: 0 }
+                                        : c
+                                )
+                            )
+                        }
+                    })
                     break
             }
         })
