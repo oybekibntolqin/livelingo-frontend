@@ -319,14 +319,30 @@ function GenerationPanel({
           continue
         }
 
-        // ESKI OQIM (cefr/reading/writing) — sinxron, o'zgarishsiz.
-        const res = await api.post<{ generated?: string[]; savedCount?: number }>(
+        // ESKI OQIM (cefr/reading/writing) — sinxron.
+        //
+        // MUHIM BUG TUZATISH: bu so'rov har doim HTTP 200 qaytaradi
+        // (backend generatsiya butunlay muvaffaqiyatsiz bo'lsa ham —
+        // masalan OpenAI billing tugasa), shuning uchun avval bu yerda
+        // "done" deb belgilanardi va savedCount har doim so'ralgan
+        // sonni (haqiqiy natijani emas) ko'rsatardi (backend javobida
+        // "savedCount" maydoni umuman yo'q edi). Endi ikkalasi ham
+        // tuzatilgan: backend real savedCount qaytaradi, va bu yerda
+        // "failed" ro'yxati bo'sh emasligini ANIQ tekshiramiz.
+        const res = await api.post<{ generated?: string[]; failed?: string[]; savedCount?: number }>(
           config.endpoint,
           body,
           { headers: token ? { 'X-Admin-Session': token } : {} }
         )
-        setStatuses((s) => ({ ...s, [level]: 'done' }))
-        setSavedCounts((c) => ({ ...c, [level]: res?.savedCount ?? count }))
+
+        if (res?.failed && res.failed.length > 0) {
+          setStatuses((s) => ({ ...s, [level]: 'failed' }))
+          setSavedCounts((c) => ({ ...c, [level]: res?.savedCount ?? 0 }))
+          setError(res.failed[0])
+        } else {
+          setStatuses((s) => ({ ...s, [level]: 'done' }))
+          setSavedCounts((c) => ({ ...c, [level]: res?.savedCount ?? 0 }))
+        }
       } catch (err) {
         setStatuses((s) => ({ ...s, [level]: 'failed' }))
         if (err instanceof ApiError && err.status === 401) {
@@ -468,7 +484,11 @@ function StatusBadge({ status, count }: { status: LevelStatus; count: number }) 
     return <span className="text-xs font-medium text-ink-muted">Cancelled ({count} saved)</span>
   }
   if (status === 'failed') {
-    return <span className="text-xs font-medium text-coral-600">Failed</span>
+    return (
+      <span className="text-xs font-medium text-coral-600">
+        Failed{count > 0 ? ` (${count} saved)` : ''}
+      </span>
+    )
   }
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-mint-600">
