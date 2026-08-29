@@ -10,7 +10,7 @@
 // ALOHIDA-ALOHIDA so'rov (backend bir martada faqat BITTA daraja
 // qabul qiladi).
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo'
@@ -26,8 +26,24 @@ type Level = (typeof LEVELS)[number]
 // (avval bu yerda faqat 8 ta til bilan alohida, eskirgan ro'yxat bor edi).
 const LANG_OPTIONS = LANGUAGES.map(({ code, name }) => ({ code, name }))
 
-type LevelStatus = 'pending' | 'running' | 'done' | 'failed'
+type LevelStatus = 'pending' | 'running' | 'done' | 'failed' | 'cancelled'
 type Tab = 'cefr' | 'reading' | 'writing' | 'exercises'
+
+// Backend'dagi ContentGenerationService.GenerationJobSummary'ga mos.
+// Faqat 'exercises' tab shu formatni ishlatadi — u backend'da fon
+// jarayoniga (background job) o'tkazilgan, boshqalar hali sinxron.
+interface GenerationJobSummary {
+  id: string
+  languageCode: string
+  cefrLevel: string
+  targetCount: number
+  savedCount: number
+  failedCount: number
+  status: 'RUNNING' | 'COMPLETED' | 'CANCELLED' | 'FAILED'
+  errorMessage: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 const TAB_CONFIG: Record<
   Tab,
@@ -43,6 +59,12 @@ const TAB_CONFIG: Record<
     // HAR BIR daraja uchun ALOHIDA son kiritadi (0/bo'sh — o'sha
     // daraja o'tkazib yuboriladi).
     customizable: boolean
+    // YANGI: faqat 'exercises' true. Backend endi bu endpoint uchun
+    // DARHOL {started, rejected} qaytaradi (generatsiya fonda davom
+    // etadi) — frontend job'ni pollab, progress'ni jonli ko'rsatishi
+    // va xohlasa BEKOR QILISHI kerak. cefr/reading/writing hali
+    // eski sinxron ({generated, failed} yoki savedCount) formatda.
+    async?: boolean
   }
 > = {
   cefr: {
@@ -84,6 +106,7 @@ const TAB_CONFIG: Record<
     countPerLevel: 600,
     includeCertificateType: false,
     customizable: true,
+    async: true,
   },
 }
 
@@ -163,6 +186,15 @@ function GenerationPanel({
     A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0,
   })
   const [error, setError] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+
+  // Joriy ishlayotgan job ID'i (faqat 'exercises' tab uchun) va
+  // "foydalanuvchi bekor qildi" bayrog'i — useState EMAS, useRef,
+  // chunki bular async for-loop ichida DARHOL (keyingi render'ni
+  // kutmasdan) tekshirilishi kerak (stale closure muammosidan qochish
+  // uchun).
+  const currentJobIdRef = useRef<string | null>(null)
+  const cancelRequestedRef = useRef(false)
 
   // MUHIM: yangi — customizable bo'lgan tab'larда (Reading/Writing/
   // Exercises) admin har bir daraja uchun ALOHIDA son kiritadi.
@@ -174,13 +206,60 @@ function GenerationPanel({
     B2: config.countPerLevel, C1: config.countPerLevel, C2: config.countPerLevel,
   })
 
+  // Faqat 'exercises' (async) tab uchun: job holatini har 2 soniyada
+  // so'raydi, savedCounts'ни JONLI yangilab turadi, va job
+  // COMPLETED/CANCELLED/FAILED bo'lguncha kutadi.
+  const pollJob = async (jobId: string, level: Level, token: string | null): Promise<GenerationJobSummary> => {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // Foydalanuvchi "Bekor qilish"ni bosgan bo'lsa — pollashni
+      // to'xtatamiz (backend job'ni o'zi CANCELLED holatiga o'tkazadi,
+      // biz uni bir marta so'nggi tekshirib olamiz).
+      const job = await api.get<GenerationJobSummary>(
+        `/api/admin/content/generation-jobs/${jobId}`,
+        { headers: token ? { 'X-Admin-Session': token } : {} }
+      )
+      setSavedCounts((c) => ({ ...c, [level]: job.savedCount }))
+
+      if (job.status !== 'RUNNING') return job
+      if (cancelRequestedRef.current) return job
+
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+  }
+
+  const cancelGeneration = async () => {
+    cancelRequestedRef.current = true
+    setCancelling(true)
+    const jobId = currentJobIdRef.current
+    if (jobId) {
+      try {
+        const token = getAdminSessionToken()
+        await api.post(
+          `/api/admin/content/generation-jobs/${jobId}/cancel`,
+          undefined,
+          { headers: token ? { 'X-Admin-Session': token } : {} }
+        )
+      } catch {
+        // Bekor qilish so'rovi o'zi muvaffaqiyatsiz bo'lsa ham,
+        // cancelRequestedRef true bo'lgani uchun keyingi darajalar
+        // baribir boshlanmaydi — jarayon shu bilan to'xtaydi.
+      }
+    }
+  }
+
   const generate = async () => {
     setRunning(true)
     setError(null)
+    setCancelling(false)
+    cancelRequestedRef.current = false
+    currentJobIdRef.current = null
     setStatuses({ A1: 'pending', A2: 'pending', B1: 'pending', B2: 'pending', C1: 'pending', C2: 'pending' })
     setSavedCounts({ A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 })
 
     for (const level of LEVELS) {
+      if (cancelRequestedRef.current) break
+
       const count = config.customizable ? levelCounts[level] : config.countPerLevel
 
       // Customizable rejimda — 0/bo'sh bo'lsa, bu daraja butunlay
@@ -204,6 +283,43 @@ function GenerationPanel({
         // rad etardi, garchi foydalanuvchi to'g'ri parolni
         // kiritgan bo'lsa ham.
         const token = getAdminSessionToken()
+
+        if (config.async) {
+          // YANGI OQIM: backend DARHOL {started, rejected} qaytaradi
+          // (generatsiya fonda davom etadi) — job ID'ni olib, uni
+          // pollaymiz.
+          const res = await api.post<{ started: GenerationJobSummary[]; rejected: string[] }>(
+            config.endpoint,
+            body,
+            { headers: token ? { 'X-Admin-Session': token } : {} }
+          )
+
+          if (!res.started.length) {
+            setStatuses((s) => ({ ...s, [level]: 'failed' }))
+            setError(res.rejected[0] ?? `Failed to start ${level}.`)
+            continue
+          }
+
+          const jobId = res.started[0].id
+          currentJobIdRef.current = jobId
+
+          const finalJob = await pollJob(jobId, level, token)
+          currentJobIdRef.current = null
+
+          if (finalJob.status === 'COMPLETED') {
+            setStatuses((s) => ({ ...s, [level]: 'done' }))
+            setSavedCounts((c) => ({ ...c, [level]: finalJob.savedCount }))
+          } else if (finalJob.status === 'CANCELLED') {
+            setStatuses((s) => ({ ...s, [level]: 'cancelled' }))
+            break // bekor qilingandan keyin keyingi darajalarga o'tmaymiz
+          } else {
+            setStatuses((s) => ({ ...s, [level]: 'failed' }))
+            if (finalJob.errorMessage) setError(finalJob.errorMessage)
+          }
+          continue
+        }
+
+        // ESKI OQIM (cefr/reading/writing) — sinxron, o'zgarishsiz.
         const res = await api.post<{ generated?: string[]; savedCount?: number }>(
           config.endpoint,
           body,
@@ -228,6 +344,7 @@ function GenerationPanel({
       }
     }
     setRunning(false)
+    setCancelling(false)
   }
 
   const totalSaved = LEVELS.reduce((sum, l) => sum + savedCounts[l], 0)
@@ -302,13 +419,28 @@ function GenerationPanel({
           <p className="mb-4 text-xs text-coral-600">{error}</p>
         )}
 
-        <button
-          onClick={generate}
-          disabled={running || !anySelected}
-          className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {running ? 'Generating…' : `Generate for ${LANG_OPTIONS.find((l) => l.code === lang)?.name}`}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={generate}
+            disabled={running || !anySelected}
+            className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {running ? 'Generating…' : `Generate for ${LANG_OPTIONS.find((l) => l.code === lang)?.name}`}
+          </button>
+
+          {/* Faqat 'exercises' (async) tab uchun — token/xarajat behuda
+              sarflanmasligi uchun, generatsiya ketayotganda to'xtatish
+              imkoniyati. */}
+          {config.async && running && (
+            <button
+              onClick={cancelGeneration}
+              disabled={cancelling}
+              className="shrink-0 rounded-2xl border border-coral-300 bg-coral-50 px-5 py-2.5 text-sm font-semibold text-coral-700 transition hover:bg-coral-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {cancelling ? 'Cancelling…' : 'Cancel'}
+            </button>
+          )}
+        </div>
 
         {!running && totalSaved > 0 && (
           <p className="mt-3 text-center text-xs text-mint-600">
@@ -328,9 +460,12 @@ function StatusBadge({ status, count }: { status: LevelStatus; count: number }) 
     return (
       <span className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
-        Generating…
+        Generating… ({count} so far)
       </span>
     )
+  }
+  if (status === 'cancelled') {
+    return <span className="text-xs font-medium text-ink-muted">Cancelled ({count} saved)</span>
   }
   if (status === 'failed') {
     return <span className="text-xs font-medium text-coral-600">Failed</span>
