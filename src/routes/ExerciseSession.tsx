@@ -94,9 +94,19 @@ export default function ExerciseSession() {
 
   const current = exercises[index]
   const exerciseStartedAt = useState(() => Date.now())[0]
+  // RACE FIX: "Check" tugmasi tez-tez (yoki qo'shaloq) bosilganda,
+  // birinchi so'rov hali javob qaytarmasdan turib ikkinchi so'rov
+  // ham yuborilib ketardi — backend ikkalasini deyarli bir vaqtda
+  // qabul qilib, ikkalasi ham "bu mashq hali yechilmagan" deb
+  // o'ylab, ikkalasi ham yozishga urinardi. Buning natijasida baza
+  // darajasidagi UNIQUE cheklov ikkinchisini rad etib, xato
+  // chiqarardi. Endi so'rov "yo'lda" ekanini kuzatib, ikkinchi
+  // bosishni frontendning o'zida bloklaymiz.
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const check = useCallback(async () => {
-    if (!current || !selected.trim()) return
+    if (!current || !selected.trim() || isSubmitting) return
+    setIsSubmitting(true)
     try {
       const res = await api.post<ExerciseResult>('/api/exercises/submit', {
         exerciseId: current.id,
@@ -120,9 +130,11 @@ export default function ExerciseSession() {
         return
       }
       setError(err instanceof Error ? err.message : 'Could not check your answer.')
+    } finally {
+      setIsSubmitting(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, selected])
+  }, [current, selected, isSubmitting])
 
   const next = () => {
     if (hearts <= 0) {
@@ -384,10 +396,10 @@ export default function ExerciseSession() {
           ) : (
             <button
               onClick={check}
-              disabled={!selected.trim()}
+              disabled={!selected.trim() || isSubmitting}
               className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Check
+              {isSubmitting ? 'Checking…' : 'Check'}
             </button>
           )}
         </div>
