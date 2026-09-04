@@ -17,6 +17,7 @@ import MessageBubble from './MessageBubble'
 import MessageComposer from './MessageComposer'
 import Avatar from '../Avatar'
 import VerifiedBadge from '../VerifiedBadge'
+import { parseServerDate } from '../../lib/dateUtils'
 
 interface Props {
     myId: string
@@ -698,8 +699,8 @@ export default function ConversationView({
 
 // ── Ikki sana bir xil kunga tegishlimi (mahalliy vaqt bo'yicha) ──
 function isSameDay(a: string, b: string): boolean {
-    const da = new Date(a)
-    const db = new Date(b)
+    const da = parseServerDate(a)
+    const db = parseServerDate(b)
     return (
         da.getFullYear() === db.getFullYear() &&
         da.getMonth() === db.getMonth() &&
@@ -709,7 +710,7 @@ function isSameDay(a: string, b: string): boolean {
 
 // ── Telegram uslubidagi sana yorlig'i: "Today" / "Yesterday" / "August 17" ──
 function formatDateLabel(dateStr: string): string {
-    const date = new Date(dateStr)
+    const date = parseServerDate(dateStr)
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
