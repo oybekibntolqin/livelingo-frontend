@@ -46,7 +46,7 @@ export default function ReadingResults() {
   if (loading) {
     return (
       <main className="grid min-h-screen place-items-center bg-cream">
-        <p className="text-sm text-ink-muted">Yuklanmoqda…</p>
+        <p className="text-sm text-ink-muted">Loading…</p>
       </main>
     )
   }
@@ -55,9 +55,9 @@ export default function ReadingResults() {
     return (
       <main className="grid min-h-screen place-items-center bg-cream px-5 text-center">
         <div>
-          <p className="mb-4 text-sm text-coral-700">{error ?? 'Natija topilmadi.'}</p>
+          <p className="mb-4 text-sm text-coral-700">{error ?? 'Result not found.'}</p>
           <Link to="/learn/reading" className="btn-primary">
-            Reading'ga qaytish
+            Back to Reading
           </Link>
         </div>
       </main>
@@ -138,11 +138,11 @@ export default function ReadingResults() {
                 <p className="text-sm font-medium text-ink">{a.question}</p>
               </div>
               <p className="pl-7 text-xs text-ink-soft">
-                Sizning javobingiz: <strong>{a.userAnswer || "(bo'sh)"}</strong>
+                Your answer: <strong>{a.userAnswer || "(empty)"}</strong>
               </p>
               {!a.correct && (
                 <p className="pl-7 text-xs text-ink-soft">
-                  To'g'ri javob: <strong>{a.correctAnswer}</strong>
+                  Correct answer: <strong>{a.correctAnswer}</strong>
                 </p>
               )}
               {a.explanation && (
@@ -154,13 +154,13 @@ export default function ReadingResults() {
 
         <div className="mt-8 flex justify-center gap-3">
           <Link to="/learn/reading/my-results" className="btn-primary">
-            Barcha natijalarim
+            All my results
           </Link>
           <Link
             to="/learn/reading"
             className="rounded-2xl border border-ink/12 px-5 py-2.5 text-sm font-medium text-ink-soft hover:border-ink/25"
           >
-            Reading'ga qaytish
+            Back to Reading
           </Link>
         </div>
       </div>

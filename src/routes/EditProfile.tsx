@@ -88,6 +88,7 @@ export default function EditProfile() {
   const [saved, setSaved] = useState(false)
 
   const submit = async () => {
+    if (submitting) return
     setSubmitting(true)
     setError(null)
     setSaved(false)
@@ -110,7 +111,7 @@ export default function EditProfile() {
       setProfile(updated)
       setSaved(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Saqlanmadi. Qayta urinib ko'ring.")
+      setError(err instanceof Error ? err.message : "Could not save. Please try again.")
     } finally {
       setSubmitting(false)
     }
@@ -143,13 +144,13 @@ export default function EditProfile() {
             {loading ? (
               <p className="py-16 text-center text-sm text-ink-muted">Loading…</p>
             ) : loadError || !profile ? (
-              <p className="py-16 text-center text-sm text-coral-700">{loadError ?? 'Profil topilmadi.'}</p>
+              <p className="py-16 text-center text-sm text-coral-700">{loadError ?? 'Profile not found.'}</p>
             ) : (
               <div className="space-y-5">
                 <div className="flex flex-col items-center gap-1.5">
                   <Avatar url={profile.profilePhotoUrl} size={80} />
                   <p className="text-[11px] text-ink-muted">
-                    Rasmni o'zgartirish uchun profildagi avatarni bosing
+                    Tap the avatar on your profile to change the photo
                   </p>
                 </div>
 
@@ -195,7 +196,7 @@ export default function EditProfile() {
                     onChange={(e) => setBio(e.target.value)}
                     rows={3}
                     disabled={submitting}
-                    placeholder="Ixtiyoriy — link ham qo'shishingiz mumkin (https://...)"
+                    placeholder="Optional — you can add a link too (https://...)"
                     className="resize-none rounded-xl border border-ink/12 bg-cream px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-muted focus:border-indigo-500/40 focus:ring-2 focus:ring-indigo-500/10"
                   />
                 </label>

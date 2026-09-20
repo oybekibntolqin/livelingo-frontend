@@ -211,7 +211,7 @@ export default function Analytics() {
           setActivity([])
           return
         }
-        setError(err instanceof Error ? err.message : 'Statistikani yuklab bo\'lmadi.')
+        setError(err instanceof Error ? err.message : 'Could not load statistics.')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -264,10 +264,10 @@ export default function Analytics() {
                 Analytics
               </p>
               <h1 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
-                O'sishingiz bir joyda
+                Your progress, in one place
               </h1>
               <p className="mt-1 text-sm text-ink-soft">
-                Mashqlar, Reading/Writing/Listening va yodlagan so'zlaringiz — barchasi shu yerda.
+                Exercises, Reading/Writing/Listening, and the words you've memorized — all here.
               </p>
             </div>
 
@@ -298,21 +298,21 @@ export default function Analytics() {
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 py-28">
               <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-indigo-500 border-t-transparent" />
-              <p className="text-xs font-medium text-ink-muted">Statistika yuklanmoqda…</p>
+              <p className="text-xs font-medium text-ink-muted">Loading statistics…</p>
             </div>
           ) : notLearning ? (
             <div className="rounded-4xl border border-ink/8 bg-white p-10 text-center">
               <p className="font-display text-lg font-semibold text-ink">
-                Hali birorta ham til o'rganishni boshlamagansiz
+                You haven't started learning a language yet
               </p>
               <p className="mt-2 text-sm text-ink-soft">
-                Analytics ko'rish uchun avval bir tilni o'rganishni boshlang.
+                Start learning a language to see your analytics.
               </p>
               <button
                 onClick={() => navigate('/onboarding')}
                 className="mt-5 rounded-full bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-600"
               >
-                Boshlash
+                Get started
               </button>
             </div>
           ) : error ? (
@@ -385,21 +385,21 @@ function AnalyticsBody({
     <div className="space-y-6">
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Daraja" value={progress?.currentLevel ?? '—'} accent="indigo" icon="level" />
-        <StatCard label="Jami XP" value={(progress?.totalXp ?? 0).toLocaleString()} accent="sun" icon="xp" />
-        <StatCard label="Streak" value={`${progress?.streakDays ?? 0} kun`} accent="coral" icon="flame" />
-        <StatCard label="Aniqlik" value={`${progress?.accuracyPercent ?? 0}%`} accent="mint" icon="target" />
-        <StatCard label="Yodlangan so'z" value={`${totalKnown}/${totalCards}`} accent="indigo" icon="cards" />
-        <StatCard label="30 kunlik amaliyot" value={`${totalPracticeMin} daq`} accent="mint" icon="clock" />
+        <StatCard label="Level" value={progress?.currentLevel ?? '—'} accent="indigo" icon="level" />
+        <StatCard label="Total XP" value={(progress?.totalXp ?? 0).toLocaleString()} accent="sun" icon="xp" />
+        <StatCard label="Streak" value={`${progress?.streakDays ?? 0} days`} accent="coral" icon="flame" />
+        <StatCard label="Accuracy" value={`${progress?.accuracyPercent ?? 0}%`} accent="mint" icon="target" />
+        <StatCard label="Words learned" value={`${totalKnown}/${totalCards}`} accent="indigo" icon="cards" />
+        <StatCard label="30-day practice" value={`${totalPracticeMin} min`} accent="mint" icon="clock" />
       </div>
 
-      {/* ── Exercises: XP va faollik trendi ── */}
+      {/* ── Exercises: XP and activity trend ── */}
       <SectionCard
-        title="Mashqlar — XP va faollik"
-        subtitle="So'nggi 30 kun — har kuni to'plangan XP va yechilgan mashqlar soni"
+        title="Exercises — XP and activity"
+        subtitle="Last 30 days — daily XP earned and exercises completed"
       >
         {activity.every((a) => a.xpEarned === 0 && a.exerciseCount === 0) ? (
-          <EmptyChart text="Hali mashq tarixi yo'q — birinchi mashqni bajaring, shu yerda trend paydo bo'ladi." />
+          <EmptyChart text="No exercise history yet — complete your first exercise to see the trend here." />
         ) : (
           <div className="h-72 sm:h-80">
             <Line
@@ -417,7 +417,7 @@ function AnalyticsBody({
                     yAxisID: 'y',
                   },
                   {
-                    label: 'Mashqlar soni',
+                    label: 'Exercises',
                     data: activity.map((a) => a.exerciseCount),
                     borderColor: C.indigo,
                     backgroundColor: 'transparent',
@@ -427,19 +427,19 @@ function AnalyticsBody({
                   },
                 ],
               }}
-              options={dualAxisLineOptions('XP', 'Mashqlar')}
+              options={dualAxisLineOptions('XP', 'Exercises')}
             />
           </div>
         )}
       </SectionCard>
 
-      {/* ── Learning: 3 skill — kunlik amaliyot vaqti ── */}
+      {/* ── Learning: daily practice time across 3 skills ── */}
       <SectionCard
-        title="Learning — 3 skill bo'yicha kunlik amaliyot"
-        subtitle="Reading / Listening / Writing — kuniga necha daqiqa mashq qilingani (so'nggi 30 kun)"
+        title="Learning — daily practice across 3 skills"
+        subtitle="Reading / Listening / Writing — minutes practiced per day (last 30 days)"
       >
         {totalPracticeMin === 0 ? (
-          <EmptyChart text="Hali Reading, Listening yoki Writing bo'yicha vaqt qayd etilmagan." />
+          <EmptyChart text="No Reading, Listening, or Writing time recorded yet." />
         ) : (
           <div className="h-72 sm:h-80">
             <Line
@@ -447,7 +447,7 @@ function AnalyticsBody({
                 labels: activity.map((a) => shortLabel(a.activityDate)),
                 datasets: [
                   {
-                    label: 'Reading (daq)',
+                    label: 'Reading (min)',
                     data: activity.map((a) => a.readingMinutes),
                     borderColor: C.indigo,
                     backgroundColor: `${C.indigo}22`,
@@ -456,7 +456,7 @@ function AnalyticsBody({
                     pointRadius: 1.5,
                   },
                   {
-                    label: 'Listening (daq)',
+                    label: 'Listening (min)',
                     data: activity.map((a) => a.listeningMinutes),
                     borderColor: C.mint,
                     backgroundColor: `${C.mint}22`,
@@ -465,7 +465,7 @@ function AnalyticsBody({
                     pointRadius: 1.5,
                   },
                   {
-                    label: 'Writing (daq)',
+                    label: 'Writing (min)',
                     data: activity.map((a) => a.writingMinutes),
                     borderColor: C.coral,
                     backgroundColor: `${C.coral}22`,
@@ -481,35 +481,35 @@ function AnalyticsBody({
         )}
       </SectionCard>
 
-      {/* ── Learning: imtihon natijalari trendi ── */}
+      {/* ── Learning: exam results trend ── */}
       <SectionCard
-        title="Learning — natijalar trendi"
-        subtitle="Har bir urinishda olingan ball — o'sish tendensiyasini ko'rish uchun (Writing 0–9 ball × 10 sifatida ko'rsatilgan)"
+        title="Learning — results trend"
+        subtitle="Score per attempt — to see the growth trend (Writing 0–9 band shown ×10)"
       >
         {readingSubs.length === 0 && listeningSubs.length === 0 && writingSubs.length === 0 ? (
-          <EmptyChart text="Hali Reading, Listening yoki Writing bo'yicha topshirilgan urinish yo'q." />
+          <EmptyChart text="No submitted Reading, Listening, or Writing attempts yet." />
         ) : (
           <div className="h-72 sm:h-80">
             <Line data={skillScoreTrendData(readingSubs, listeningSubs, writingSubs)} options={percentLineOptions()} />
           </div>
         )}
         <div className="mt-4 flex flex-wrap gap-4 border-t border-ink/8 pt-4 text-sm">
-          <ScoreBadge label="Reading o'rtacha" value={avgReading != null ? `${avgReading}%` : '—'} color={C.indigo} />
-          <ScoreBadge label="Listening o'rtacha" value={avgListening != null ? `${avgListening}%` : '—'} color={C.mint} />
-          <ScoreBadge label="Writing o'rtacha" value={avgWritingBand != null ? `${avgWritingBand} / 9` : '—'} color={C.coral} />
+          <ScoreBadge label="Reading average" value={avgReading != null ? `${avgReading}%` : '—'} color={C.indigo} />
+          <ScoreBadge label="Listening average" value={avgListening != null ? `${avgListening}%` : '—'} color={C.mint} />
+          <ScoreBadge label="Writing average" value={avgWritingBand != null ? `${avgWritingBand} / 9` : '—'} color={C.coral} />
         </div>
       </SectionCard>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* ── Exercises: to'g'ri / noto'g'ri javoblar ── */}
-        <SectionCard title="Mashqlar — javoblar taqsimoti" subtitle="Barcha vaqt bo'yicha">
+        {/* ── Exercises: correct / incorrect answers ── */}
+        <SectionCard title="Exercises — answer breakdown" subtitle="All time">
           {(progress?.totalExercises ?? 0) === 0 ? (
-            <EmptyChart text="Hali mashq yechilmagan." small />
+            <EmptyChart text="No exercises completed yet." small />
           ) : (
             <div className="mx-auto h-64 w-64">
               <Doughnut
                 data={{
-                  labels: ['To\'g\'ri', 'Noto\'g\'ri'],
+                  labels: ['Correct', 'Incorrect'],
                   datasets: [
                     {
                       data: [
@@ -528,15 +528,15 @@ function AnalyticsBody({
           )}
         </SectionCard>
 
-        {/* ── Flashcards: yodlangan so'zlar ── */}
-        <SectionCard title="Flashcards — yodlangan so'zlar" subtitle={`${totalKnown} / ${totalCards} so'z (${knownPercent}%)`}>
+        {/* ── Flashcards: words learned ── */}
+        <SectionCard title="Flashcards — words learned" subtitle={`${totalKnown} / ${totalCards} words (${knownPercent}%)`}>
           {totalCards === 0 ? (
-            <EmptyChart text="Hali flashcard deck yaratilmagan." small />
+            <EmptyChart text="No flashcard deck created yet." small />
           ) : (
             <div className="mx-auto h-64 w-64">
               <Doughnut
                 data={{
-                  labels: ['Yodlangan', 'Hali yodlanmagan'],
+                  labels: ['Learned', 'Not learned yet'],
                   datasets: [
                     {
                       data: [totalKnown, Math.max(totalCards - totalKnown, 0)],
@@ -553,9 +553,9 @@ function AnalyticsBody({
         </SectionCard>
       </div>
 
-      {/* ── Flashcards: deck bo'yicha taqsimot ── */}
+      {/* ── Flashcards: breakdown by deck ── */}
       {decks.length > 0 && (
-        <SectionCard title="Flashcards — deck bo'yicha" subtitle="Har bir deckda yodlangan so'zlar soni">
+        <SectionCard title="Flashcards — by deck" subtitle="Number of words learned per deck">
           <div style={{ height: Math.max(decks.length * 42, 140) }}>
             <Bar
               data={{

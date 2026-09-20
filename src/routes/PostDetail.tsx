@@ -46,7 +46,7 @@ export default function PostDetail() {
       })
       .then(setPost)
       .catch((err) =>
-        setError(err instanceof Error ? err.message : 'Post topilmadi.')
+        setError(err instanceof Error ? err.message : 'Post not found.')
       )
       .finally(() => setLoading(false))
   }, [postId])
@@ -63,7 +63,7 @@ export default function PostDetail() {
             <p className="py-16 text-center text-sm text-ink-muted">Loading…</p>
           ) : error || !post ? (
             <div className="rounded-4xl border border-ink/8 bg-white px-6 py-10 text-center">
-              <p className="mb-4 text-sm text-coral-700">{error ?? 'Post topilmadi.'}</p>
+              <p className="mb-4 text-sm text-coral-700">{error ?? 'Post not found.'}</p>
               <Link to="/dashboard" className="btn-primary">
                 Dashboard
               </Link>

@@ -78,7 +78,7 @@ export default function Flashcards() {
               Flashcards
             </h1>
             <p className="mt-1 text-sm text-ink-soft">
-              O'z deck'laringizni yarating yoki jamoat deck'laridan o'rganing
+              Create your own decks or learn from public decks
             </p>
           </div>
           <button onClick={() => setCreateOpen(true)} className="btn-primary">
@@ -132,8 +132,8 @@ export default function Flashcards() {
           <div className="rounded-3xl border border-dashed border-ink/12 bg-white/50 p-10 text-center">
             <p className="text-sm text-ink-soft">
               {tab === 'my'
-                ? "Hali deck yaratmagansiz. Birinchisini yarating!"
-                : "Bu tilda jamoat deck'i topilmadi."}
+                ? "You haven't created a deck yet. Create your first one!"
+                : "No public decks found for this language."}
             </p>
             {tab === 'my' && (
               <button onClick={() => setCreateOpen(true)} className="mt-4 btn-primary">
@@ -310,8 +310,9 @@ function CreateDeckModal({
   if (!open) return null
 
   const submit = async () => {
+    if (submitting) return
     if (!title.trim()) {
-      setError('Deck nomi majburiy.')
+      setError('Deck name is required.')
       return
     }
     setSubmitting(true)
@@ -327,7 +328,7 @@ function CreateDeckModal({
       const deck = await flashcardApi.createDeck(input)
       onCreated(deck)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Deck yaratilmadi.")
+      setError(err instanceof Error ? err.message : "Could not create deck.")
     } finally {
       setSubmitting(false)
     }

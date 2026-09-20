@@ -161,7 +161,7 @@ export default function PostCard({
   // ── Comment bo'limini ochish — birinchi marta tarixni yuklaymiz ──
   const openComments = async () => {
     setCommentsOpen((v) => !v)
-    if (!commentsOpen && !realCommentsFetched) {
+    if (!commentsOpen && !realCommentsFetched && !commentsLoading) {
       setCommentsLoading(true)
       try {
         const list = await postApi.comments(post.id)
@@ -709,6 +709,7 @@ function PostMenu({
   }, [open])
 
   const handleDelete = async () => {
+    if (deleting) return
     deletingRef.current = true
     setDeleting(true)
     setDeleteError(null)

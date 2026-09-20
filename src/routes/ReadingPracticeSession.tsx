@@ -107,7 +107,7 @@ export default function ReadingPracticeSession() {
   }
 
   const handleGenerate = async () => {
-    if (!id) return
+    if (!id || generating) return
     setGenerating(true)
     setGenerateError(null)
     try {
@@ -148,7 +148,7 @@ export default function ReadingPracticeSession() {
   )
 
   const submit = async () => {
-    if (!material || questions.length === 0) return
+    if (!material || questions.length === 0 || submitting) return
     if (totalAnswered < questions.length) {
       const ok = confirm(
         `You've answered ${totalAnswered} / ${questions.length} questions. Submit anyway?`

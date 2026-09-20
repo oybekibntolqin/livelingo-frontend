@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom'
 import {motion, AnimatePresence} from 'framer-motion'
 import Logo from '../components/Logo'
 import Flashcard3D from '../components/Flashcard3D'
+import {useSEO} from '../lib/useSEO'
 
 // ─────────────────────────────────────────────────────────────────
 // Multilingual greeting rotator — sits above the headline.
@@ -120,7 +121,7 @@ function CopyableEmail({
                              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 6L9 17l-5-5"/>
                         </svg>
-                        Nusxalandi!
+                        Copied!
                     </motion.span>
                 )}
             </AnimatePresence>
@@ -917,7 +918,7 @@ function Footer() {
     return (
         <footer className="border-t border-ink/8 bg-cream py-14">
             <div className="container-x">
-                <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+                <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr_1fr]">
                     <div>
                         <Logo size={32}/>
                         <p className="mt-4 max-w-xs text-sm text-ink-soft">
@@ -941,6 +942,30 @@ function Footer() {
 
                     <div>
                         <p className="mb-4 font-mono text-xs font-medium uppercase tracking-widest text-ink-muted">
+                            Learn
+                        </p>
+                        <ul className="space-y-3 text-sm">
+                            <li><Link to="/language-learning" className="text-ink-soft transition-colors hover:text-ink">Language learning</Link></li>
+                            <li><Link to="/language-exchange" className="text-ink-soft transition-colors hover:text-ink">Language exchange</Link></li>
+                            <li><Link to="/video-chat" className="text-ink-soft transition-colors hover:text-ink">Video chat</Link></li>
+                            <li><Link to="/language-exercises" className="text-ink-soft transition-colors hover:text-ink">Exercises</Link></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <p className="mb-4 font-mono text-xs font-medium uppercase tracking-widest text-ink-muted">
+                            Practice
+                        </p>
+                        <ul className="space-y-3 text-sm">
+                            <li><Link to="/speaking-practice" className="text-ink-soft transition-colors hover:text-ink">Speaking</Link></li>
+                            <li><Link to="/reading-practice" className="text-ink-soft transition-colors hover:text-ink">Reading</Link></li>
+                            <li><Link to="/listening-practice" className="text-ink-soft transition-colors hover:text-ink">Listening</Link></li>
+                            <li><Link to="/writing-practice" className="text-ink-soft transition-colors hover:text-ink">Writing</Link></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <p className="mb-4 font-mono text-xs font-medium uppercase tracking-widest text-ink-muted">
                             Company
                         </p>
                         <ul className="space-y-3 text-sm">
@@ -950,12 +975,14 @@ function Footer() {
                                    className="text-ink-soft transition-colors hover:text-ink">Support</a></li>
                         </ul>
                     </div>
+                </div>
 
+                <div className="mt-10 grid gap-10 sm:grid-cols-1">
                     <div>
                         <p className="mb-4 font-mono text-xs font-medium uppercase tracking-widest text-ink-muted">
                             Contact
                         </p>
-                        <ul className="space-y-3 text-sm">
+                        <ul className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
                             <li>
                                 <CopyableEmail
                                     email="livelingo.official@gmail.com"
@@ -997,6 +1024,29 @@ function Footer() {
 // Page
 // ─────────────────────────────────────────────────────────────────
 export default function Landing() {
+    useSEO({
+        title: 'LiveLingo — Language Learning, Language Exchange & P2P Video Chat',
+        description:
+            'LiveLingo is a language learning platform for practicing languages with real people through P2P video chat, speaking/reading/writing/listening exercises, and flashcards — in 15+ languages.',
+        path: '/',
+        jsonLd: [
+            {
+                '@context': 'https://schema.org',
+                '@type': 'Organization',
+                name: 'LiveLingo',
+                url: 'https://livelingo.uz',
+                logo: 'https://livelingo.uz/favicon.svg',
+                sameAs: ['https://t.me/livelingobot'],
+            },
+            {
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'LiveLingo',
+                url: 'https://livelingo.uz',
+            },
+        ],
+    })
+
     return (
         <main className="min-h-screen bg-cream">
             <Navbar/>

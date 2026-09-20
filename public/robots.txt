@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+# Authenticated / private app areas — not useful to crawl (all
+# require sign-in via RequireCompletedProfile; an unauthenticated
+# crawler would only ever see a sign-in redirect here). Public
+# SEO/marketing content lives at /language-learning, /language-exchange,
+# /video-chat, /language-exercises, /speaking-practice, /reading-practice,
+# /listening-practice, /writing-practice and is NOT affected by this list.
+Disallow: /dashboard
+Disallow: /search
+Disallow: /analytics
+Disallow: /notifications
+Disallow: /learn
+Disallow: /admin
+Disallow: /chat
+Disallow: /flashcards
+Disallow: /profile
+Disallow: /settings
+Disallow: /posts
+
+Sitemap: https://livelingo.uz/sitemap.xml

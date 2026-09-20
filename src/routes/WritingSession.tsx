@@ -168,7 +168,7 @@ export default function WritingSession() {
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const submit = async () => {
-    if (!questionId || !question) return
+    if (!questionId || !question || submitting) return
     if (content.trim().length === 0) {
       setSubmitError('Write something before submitting.')
       return

@@ -52,6 +52,7 @@ export default function WritingExam() {
   const availableCerts = CERTS_BY_LANG[languageCode] ?? ['GENERAL']
 
   const startExam = async () => {
+    if (phase === 'loading') return
     setPhase('loading')
     setError(null)
     try {
@@ -69,7 +70,7 @@ export default function WritingExam() {
         navigate('/sign-in', { replace: true })
         return
       }
-      setError(err instanceof Error ? err.message : 'Exam boshlanmadi.')
+      setError(err instanceof Error ? err.message : 'Could not start the exam.')
       setPhase('error')
     }
   }
@@ -108,7 +109,7 @@ export default function WritingExam() {
       }
     } catch (err) {
       submittedTasksRef.current.delete(taskIndex)
-      setError(err instanceof Error ? err.message : 'Topshirishda xatolik yuz berdi.')
+      setError(err instanceof Error ? err.message : 'Failed to submit.')
       setPhase('active')
     }
   }, [examData, taskIndex, content, navigate])
@@ -132,12 +133,12 @@ export default function WritingExam() {
         <div className="w-full max-w-md rounded-3xl border border-ink/8 bg-white p-6">
           <p className="mb-1 font-display text-lg font-semibold text-ink">Writing Exam</p>
           <p className="mb-6 text-sm text-ink-muted">
-            Sertifikatga mos vazifalar ketma-ket beriladi, umumiy natija hisoblanadi.
+            You'll get a sequence of tasks matching the certificate, and an overall score at the end.
           </p>
 
           <label className="mb-4 block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Til
+              Language
             </span>
             <div className="grid grid-cols-3 gap-1.5">
               {LANG_OPTIONS.map((l) => (
@@ -161,7 +162,7 @@ export default function WritingExam() {
 
           <label className="mb-4 block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Sertifikat
+              Certificate
             </span>
             <div className="flex flex-wrap gap-1.5">
               {availableCerts.map((c) => (
@@ -182,7 +183,7 @@ export default function WritingExam() {
 
           <label className="mb-6 block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Daraja
+              Level
             </span>
             <div className="grid grid-cols-6 gap-1.5">
               {LEVELS.map((l) => (
@@ -202,10 +203,10 @@ export default function WritingExam() {
           </label>
 
           <button onClick={startExam} className="btn-primary w-full">
-            Boshlash
+            Start
           </button>
           <Link to="/learn/writing" className="mt-4 block text-center text-xs text-ink-muted hover:text-ink">
-            ← Writing'ga qaytish
+            ← Back to Writing
           </Link>
         </div>
       </main>
@@ -215,7 +216,7 @@ export default function WritingExam() {
   if (phase === 'loading') {
     return (
       <main className="grid min-h-screen place-items-center bg-cream">
-        <p className="text-sm text-ink-muted">Yuklanmoqda…</p>
+        <p className="text-sm text-ink-muted">Loading…</p>
       </main>
     )
   }
@@ -224,9 +225,9 @@ export default function WritingExam() {
     return (
       <main className="grid min-h-screen place-items-center bg-cream px-5 text-center">
         <div>
-          <p className="mb-4 text-sm text-coral-700">{error ?? 'Xatolik yuz berdi.'}</p>
+          <p className="mb-4 text-sm text-coral-700">{error ?? 'Something went wrong.'}</p>
           <Link to="/learn/writing" className="btn-primary">
-            Writing'ga qaytish
+            Back to Writing
           </Link>
         </div>
       </main>
@@ -263,14 +264,14 @@ export default function WritingExam() {
         {isReady && (
           <div className="mb-6 rounded-3xl border-2 border-indigo-500/20 bg-indigo-50/60 p-6 text-center">
             <p className="mb-1 font-display text-lg font-semibold text-ink">
-              Task {taskIndex + 1} tayyormisiz?
+              Ready for Task {taskIndex + 1}?
             </p>
             <p className="mb-4 text-sm text-ink-muted">
-              {formatTime(task.timeLimitSeconds)} vaqt beriladi. Savolni oldindan
-              o'qib chiqishingiz mumkin — vaqt faqat boshlagach ishga tushadi.
+              You'll have {formatTime(task.timeLimitSeconds)}. You can read the
+              question now — the timer only starts once you begin.
             </p>
             <button onClick={handleReady} className="btn-primary">
-              Boshlash
+              Start
             </button>
           </div>
         )}
@@ -295,7 +296,7 @@ export default function WritingExam() {
           value={content}
           disabled={!(phase === 'active')}
           onChange={(e) => setContent(e.target.value)}
-          placeholder={isReady ? "Yozish 'Boshlash' bosilgandan keyin ochiladi…" : 'Shu yerga yozing…'}
+          placeholder={isReady ? "Writing opens once you press 'Start'…" : 'Start writing here…'}
           rows={14}
           className="w-full rounded-2xl border border-ink/10 bg-white p-4 text-sm text-ink outline-none focus:border-indigo-500/40 focus:ring-2 focus:ring-indigo-500/10 disabled:cursor-not-allowed disabled:bg-cream"
         />

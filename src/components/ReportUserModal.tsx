@@ -52,7 +52,7 @@ export default function ReportUserModal({
       setDone(true)
       onReported()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Yuborilmadi. Qayta urinib ko'ring.")
+      setError(err instanceof Error ? err.message : "Could not submit. Please try again.")
     } finally {
       setSubmitting(false)
     }

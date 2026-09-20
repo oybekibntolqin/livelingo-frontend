@@ -47,10 +47,10 @@ export default class ErrorBoundary extends Component<Props, State> {
               </svg>
             </div>
             <h1 className="mb-2 font-display text-lg font-semibold text-ink">
-              {this.props.fallbackLabel ?? 'Nimadir xato ketdi'}
+              {this.props.fallbackLabel ?? 'Something went wrong'}
             </h1>
             <p className="mb-1 text-sm text-ink-soft">
-              Sahifani ko'rsatishда xatolik yuz berdi.
+              An error occurred while displaying this page.
             </p>
             {this.state.error && (
               <pre className="mb-4 mt-3 max-h-40 overflow-auto rounded-xl bg-white p-3 text-left text-xs text-coral-700">
@@ -62,13 +62,13 @@ export default class ErrorBoundary extends Component<Props, State> {
                 onClick={this.reset}
                 className="rounded-2xl border border-ink/12 bg-white px-4 py-2 text-sm font-medium text-ink transition hover:bg-cream"
               >
-                Qayta urinish
+                Try again
               </button>
               <button
                 onClick={() => window.location.reload()}
                 className="rounded-2xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-600"
               >
-                Sahifani yangilash
+                Reload page
               </button>
             </div>
           </div>

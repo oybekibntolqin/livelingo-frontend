@@ -249,6 +249,7 @@ function GenerationPanel({
   }
 
   const generate = async () => {
+    if (running) return
     setRunning(true)
     setError(null)
     setCancelling(false)

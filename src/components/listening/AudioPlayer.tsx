@@ -423,12 +423,12 @@ export default function AudioPlayer({
 
                 {analyzing && (
                     <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 text-[11px] font-medium text-zinc-400 tracking-wider">
-                        <span className="animate-pulse">Toʻlqin tahlil qilinmoqda…</span>
+                        <span className="animate-pulse">Analyzing waveform…</span>
                     </div>
                 )}
             </div>
 
-            {/* A-B Loop interfeysi */}
+            {/* A-B loop interface */}
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 border border-zinc-900 rounded-xl bg-zinc-900/20 mb-4">
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">A-B Loop:</span>
@@ -443,7 +443,7 @@ export default function AudioPlayer({
                         </span>
                     )}
                     {loopStart === null && loopEnd === null && (
-                        <span className="text-[11px] text-zinc-500 font-medium">Faol emas</span>
+                        <span className="text-[11px] text-zinc-500 font-medium">Not active</span>
                     )}
                 </div>
 
@@ -451,39 +451,39 @@ export default function AudioPlayer({
                     <button
                         onClick={handleSetA}
                         className="px-2.5 py-1 text-[11px] font-semibold text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-all duration-200"
-                        title="Hozirgi vaqtni A nuqta qilib belgilash"
+                        title="Mark the current time as point A"
                     >
-                        [A] qo'yish
+                        Set [A]
                     </button>
                     <button
                         onClick={handleSetB}
                         className="px-2.5 py-1 text-[11px] font-semibold text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-all duration-200"
-                        title="Hozirgi vaqtni B nuqta qilib belgilash"
+                        title="Mark the current time as point B"
                     >
-                        [B] qo'yish
+                        Set [B]
                     </button>
                     {(loopStart !== null || loopEnd !== null) && (
                         <button
                             onClick={handleClearLoop}
                             className="px-2 py-1 text-[11px] font-semibold text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 rounded-lg transition-all duration-200"
-                            title="Loopni tozalash"
+                            title="Clear loop"
                         >
-                            O'chirish
+                            Clear
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Vaqt hisoblagichi */}
+            {/* Time counter */}
             <div className="flex items-center justify-between mb-4 font-mono text-xs text-zinc-400 tabular-nums">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
             </div>
 
-            {/* Boshqaruv paneli */}
+            {/* Controls */}
             <div className="flex items-center justify-between gap-4">
 
-                {/* Chap qism: Takrorlash va Tezlik */}
+                {/* Left: repeat and speed */}
                 <div className="flex items-center gap-1.5">
                     <button
                         onClick={() => setRepeat((r) => !r)}
@@ -492,7 +492,7 @@ export default function AudioPlayer({
                                 ? 'text-amber-400 bg-amber-400/10'
                                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
                         }`}
-                        title={repeat ? "Takrorlash yoniq" : "Takrorlash o'chiq"}
+                        title={repeat ? "Repeat on" : "Repeat off"}
                     >
                         <RepeatIcon />
                     </button>
@@ -505,7 +505,7 @@ export default function AudioPlayer({
                     </button>
                 </div>
 
-                {/* Markaziy qism: O'ynatish tugmalari */}
+                {/* Center: playback buttons */}
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => seekBy(-3)}
@@ -518,7 +518,7 @@ export default function AudioPlayer({
                     <button
                         onClick={togglePlay}
                         className="w-14 h-14 bg-amber-500 hover:bg-amber-400 active:scale-95 rounded-full grid place-items-center text-zinc-950 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all duration-200"
-                        title={playing ? 'Pauza' : "O'ynatish"}
+                        title={playing ? 'Pause' : 'Play'}
                     >
                         {playing ? (
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -547,12 +547,12 @@ export default function AudioPlayer({
                     </button>
                 </div>
 
-                {/* O'ng qism: Ovozni boshqarish */}
+                {/* Right: volume control */}
                 <div className="flex items-center gap-2">
                     <button
                         onClick={toggleMute}
                         className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition duration-200"
-                        title={muted ? 'Ovozni yoqish' : "Ovozni o'chirish"}
+                        title={muted ? 'Unmute' : 'Mute'}
                     >
                         <VolumeIcon />
                     </button>
@@ -564,7 +564,7 @@ export default function AudioPlayer({
                         value={muted ? 0 : volume}
                         onChange={(e) => changeVolume(Number(e.target.value))}
                         className="w-16 sm:w-20 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-500 hover:accent-amber-400 focus:outline-none"
-                        aria-label="Ovoz balandligi"
+                        aria-label="Volume"
                     />
                 </div>
             </div>

@@ -29,7 +29,7 @@ export default function BlockedUsers() {
     blockApi
       .getBlockedUsers()
       .then(setUsers)
-      .catch((err) => setError(err instanceof Error ? err.message : "Yuklanmadi."))
+      .catch((err) => setError(err instanceof Error ? err.message : "Could not load."))
       .finally(() => setLoading(false))
   }, [])
 
@@ -83,7 +83,7 @@ export default function BlockedUsers() {
               <p className="py-12 text-center text-sm text-coral-700">{error}</p>
             ) : users.length === 0 ? (
               <p className="py-12 text-center text-sm text-ink-muted">
-                Siz hech kimni block qilmagansiz.
+                You haven't blocked anyone.
               </p>
             ) : (
               <div className="space-y-1">

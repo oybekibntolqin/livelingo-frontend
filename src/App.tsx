@@ -45,6 +45,14 @@ import Analytics from './routes/Analytics'
 import Notifications from './routes/Notifications'
 import NotFound from './routes/NotFound'
 import RequireCompletedProfile from './components/RequireCompletedProfile'
+import LanguageLearningPage from './routes/seo/LanguageLearningPage'
+import LanguageExchangePage from './routes/seo/LanguageExchangePage'
+import VideoChatPage from './routes/seo/VideoChatPage'
+import LanguageExercisesPage from './routes/seo/LanguageExercisesPage'
+import SpeakingPracticePage from './routes/seo/SpeakingPracticePage'
+import ReadingPracticePage from './routes/seo/ReadingPracticePage'
+import ListeningPracticePage from './routes/seo/ListeningPracticePage'
+import WritingPracticePage from './routes/seo/WritingPracticePage'
 
 import {chatSocket} from './lib/chatSocket'
 import {checkAccountStatusOnce, markBannedNow, stopAccountStatusChecker} from './lib/accountStatus'
@@ -117,6 +125,20 @@ export default function App() {
             <Route path="/sign-in" element={<SignIn/>}/>
             <Route path="/onboarding" element={<Onboarding/>}/>
             <Route path="/cefr-test" element={<CefrTest/>}/>
+
+            {/* Public SEO / marketing pages (Section 6 of the SEO spec).
+                These are separate from the authenticated /learn/* app
+                pages — they're crawlable content pages that explain a
+                feature and funnel into sign-in, not the gated feature
+                itself. */}
+            <Route path="/language-learning" element={<LanguageLearningPage/>}/>
+            <Route path="/language-exchange" element={<LanguageExchangePage/>}/>
+            <Route path="/video-chat" element={<VideoChatPage/>}/>
+            <Route path="/language-exercises" element={<LanguageExercisesPage/>}/>
+            <Route path="/speaking-practice" element={<SpeakingPracticePage/>}/>
+            <Route path="/reading-practice" element={<ReadingPracticePage/>}/>
+            <Route path="/listening-practice" element={<ListeningPracticePage/>}/>
+            <Route path="/writing-practice" element={<WritingPracticePage/>}/>
 
             {/* MUHIM: quyidagi barcha route'lar RequireCompletedProfile
                 ostida — bitta markaziy "layout" guard orqali himoyalangan.

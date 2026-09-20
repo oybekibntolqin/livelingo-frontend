@@ -179,7 +179,7 @@ export default function Profile() {
             <p className="py-16 text-center text-sm text-ink-muted">Loading…</p>
           ) : error || !profile ? (
             <div className="rounded-4xl border border-ink/8 bg-white px-6 py-10 text-center">
-              <p className="text-sm text-coral-700">{error ?? 'Profil topilmadi.'}</p>
+              <p className="text-sm text-coral-700">{error ?? 'Profile not found.'}</p>
             </div>
           ) : (
             <ProfileContent
@@ -413,7 +413,7 @@ function ProfileContent({
           <p className="py-8 text-center text-sm text-ink-muted">Loading…</p>
         ) : posts.length === 0 ? (
           <p className="py-8 text-center text-sm text-ink-muted">
-            {isOwnProfile ? "Hali post yo'q." : "Postlar yo'q."}
+            {isOwnProfile ? "No posts yet." : "No posts."}
           </p>
         ) : (
           <PostGrid posts={posts} onPostDeleted={onPostDeleted} onPostUpdated={onPostUpdated} />

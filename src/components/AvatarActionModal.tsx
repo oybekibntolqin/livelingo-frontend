@@ -25,25 +25,27 @@ export default function AvatarActionModal({
   if (!open) return null
 
   const handleFile = async (file: File) => {
+    if (busy) return
     setBusy(true)
     setError(null)
     try {
       const updated = await profileApi.uploadProfilePhoto(file)
       onSaved(updated)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Rasm yuklanmadi.")
+      setError(err instanceof Error ? err.message : "Could not upload photo.")
       setBusy(false)
     }
   }
 
   const handleDelete = async () => {
+    if (busy) return
     setBusy(true)
     setError(null)
     try {
       const updated = await profileApi.deleteProfilePhoto()
       onSaved(updated)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "O'chirilmadi.")
+      setError(err instanceof Error ? err.message : "Could not delete.")
       setBusy(false)
     }
   }

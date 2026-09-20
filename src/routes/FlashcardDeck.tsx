@@ -64,12 +64,12 @@ export default function FlashcardDeckPage() {
   const isOwner = deck && myId && deck.ownerId === myId
 
   const deleteCard = async (card: FlashcardCard) => {
-    if (!confirm(`"${card.front}" kartochkasini o'chirishni xohlaysizmi?`)) return
+    if (!confirm(`Delete the card "${card.front}"?`)) return
     try {
       await flashcardApi.deleteCard(card.id)
       setCards((prev) => prev.filter((c) => c.id !== card.id))
     } catch (err) {
-      alert(err instanceof Error ? err.message : "O'chirishda xato.")
+      alert(err instanceof Error ? err.message : "Failed to delete.")
     }
   }
 
@@ -85,7 +85,7 @@ export default function FlashcardDeckPage() {
     return (
       <main className="grid min-h-screen place-items-center bg-cream px-5 text-center">
         <div>
-          <p className="mb-4 text-sm text-coral-700">{error ?? 'Deck topilmadi.'}</p>
+          <p className="mb-4 text-sm text-coral-700">{error ?? 'Deck not found.'}</p>
           <Link to="/flashcards" className="btn-primary">Back to Flashcards</Link>
         </div>
       </main>
@@ -156,7 +156,7 @@ export default function FlashcardDeckPage() {
         {cards.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-ink/12 bg-white/50 p-10 text-center">
             <p className="text-sm text-ink-soft">
-              {isOwner ? "Hali kartochka yo'q. Birinchisini qo'shing." : "Bu deck bo'sh."}
+              {isOwner ? "No cards yet. Add your first one." : "This deck is empty."}
             </p>
           </div>
         ) : (
@@ -334,8 +334,9 @@ function CardModal({
   }
 
   const submit = async () => {
+    if (submitting) return
     if (!front.trim() || !back.trim()) {
-      setError('Front va Back majburiy.')
+      setError('Front and Back are required.')
       return
     }
     setSubmitting(true)
@@ -354,7 +355,7 @@ function CardModal({
         onSaved(created, true)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Saqlanmadi.')
+      setError(err instanceof Error ? err.message : 'Could not save.')
     } finally {
       setSubmitting(false)
     }

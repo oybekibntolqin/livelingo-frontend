@@ -75,7 +75,7 @@ export default function GenerateWritingModal({
         navigate('/sign-in', { replace: true })
         return
       }
-      setErr(e instanceof Error ? e.message : 'Generatsiya muvaffaqiyatsiz.')
+      setErr(e instanceof Error ? e.message : 'Generation failed.')
     } finally {
       setGenerating(false)
     }
@@ -215,7 +215,7 @@ export default function GenerateWritingModal({
             disabled={generating}
             className="btn-primary w-full disabled:opacity-60"
           >
-            {generating ? 'Yaratilmoqda…' : 'Yaratish'}
+            {generating ? 'Generating…' : 'Generate'}
           </button>
         </div>
       </motion.div>

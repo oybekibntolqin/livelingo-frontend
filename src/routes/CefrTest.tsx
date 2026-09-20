@@ -163,6 +163,7 @@ export default function CefrTest() {
 
   // ── Fetch questions and start test ─────────────────────────────
   const startTest = async () => {
+    if (phase === 'loading') return
     setError(null)
     setPhase('loading')
     try {
@@ -195,6 +196,7 @@ export default function CefrTest() {
 
   // ── Submit the whole test ──────────────────────────────────────
   const submitTest = async () => {
+    if (phase === 'submitting') return
     setError(null)
     setPhase('submitting')
     try {

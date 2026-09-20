@@ -171,17 +171,11 @@ export const postApi = {
   deletePost: (postId: string) => api.del(`/api/posts/${postId}`),
 }
 
-// Share qilinadigan link — bizning ilovamizning o'z domeniga
-// ishora qiladi (R2/CDN xom URL emas).  Instagram'нинг
-// instagram.com/reel/{id} bilan bir xil mantiq: link bosilganda
-// R2 fayli emas, BIZNING ilovamiz ochiladi.
-//
-// MUHIM: ilova HashRouter ishlatadi — haqiqiy route "#" belgisidan
-// keyin yoziladi (masalan /#/posts/abc123).  "#"ni unutish React
-// Router'ga hech qanday route ko'rsatmaydi, natijada standart
-// (Landing) sahifa ochilib qoladi — bu safar aynan shu bug tuzatildi.
+// Share link — points at our own app's domain (not a raw R2/CDN
+// URL). Same logic as Instagram's instagram.com/reel/{id}: clicking
+// the link opens OUR app, not the raw file.
 export function getPostShareUrl(postId: string): string {
-  return `${window.location.origin}/#/posts/${postId}`
+  return `${window.location.origin}/posts/${postId}`
 }
 
 interface UploadedAttachmentResult {

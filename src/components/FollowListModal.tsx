@@ -107,8 +107,8 @@ export default function FollowListModal({
                         <div className="px-3 py-2">
                             <p className="mb-3 text-center text-sm text-ink-muted">
                                 {mode === 'followers'
-                                    ? "Sizda hali follower yo'q."
-                                    : "Siz hali hech kimni follow qilmagansiz."}
+                                    ? "You don't have any followers yet."
+                                    : "You aren't following anyone yet."}
                             </p>
                             <p className="mb-3 font-mono text-[10px] font-medium uppercase tracking-widest text-ink-muted">
                                 People to follow
@@ -117,7 +117,7 @@ export default function FollowListModal({
                                 <p className="py-4 text-center text-xs text-ink-muted">Loading…</p>
                             ) : suggested.length === 0 ? (
                                 <p className="py-4 text-center text-xs text-ink-muted">
-                                    Tavsiya topilmadi.
+                                    No suggestions found.
                                 </p>
                             ) : (
                                 <div className="space-y-1">

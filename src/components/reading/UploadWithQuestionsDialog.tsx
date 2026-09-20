@@ -82,9 +82,9 @@ export default function UploadWithQuestionsDialog({
       if (mainTextTooLong) {
         const approxWords = Math.round(textPaste.trim().length / 6)
         setErr(
-          `Asosiy matn juda uzun (~${approxWords} so'z, ${textPaste.trim().length} belgi). ` +
-            `Reading darsi uchun bitta maqola yoki qisqa parcha joylashtiring — butun kitob ` +
-            `yoki roman emas. Chegara: ${MAX_MATERIAL_CHARS.toLocaleString('en-US')} belgigacha.`
+          `Main text is too long (~${approxWords} words, ${textPaste.trim().length} characters). ` +
+            `For a Reading lesson, use a single article or short passage — not a whole ` +
+            `book or novel. Limit: ${MAX_MATERIAL_CHARS.toLocaleString('en-US')} characters.`
         )
       }
       return
@@ -92,7 +92,7 @@ export default function UploadWithQuestionsDialog({
     const token = getToken()
     if (!token) {
       setAuthExpired(true)
-      setErr("Yuklashdan oldin tizimga kirishingiz kerak.")
+      setErr("You need to sign in before uploading.")
       return
     }
 
@@ -135,8 +135,8 @@ export default function UploadWithQuestionsDialog({
             setAuthExpired(true)
             reject(new Error(
               xhr.status === 401
-                ? 'Sessiya muddati tugagan. Qayta kiring.'
-                : "Ruxsat yo'q. Qayta kirib ko'ring."
+                ? 'Your session has expired. Please sign in again.'
+                : "Not authorized. Please sign in again."
             ))
             return
           }
@@ -144,7 +144,7 @@ export default function UploadWithQuestionsDialog({
           // keladi (GlobalExceptionHandler) — masalan matn/PDF
           // uzunligi chegaradan oshganda aniq va foydali xabar shu
           // yerdan chiqadi. Avval xom JSON matn ko'rsatilardi.
-          let message = `Yuklash muvaffaqiyatsiz (${xhr.status})`
+          let message = `Upload failed (${xhr.status})`
           try {
             const parsed = JSON.parse(xhr.responseText)
             if (parsed && typeof parsed.message === 'string' && parsed.message.trim()) {
@@ -162,7 +162,7 @@ export default function UploadWithQuestionsDialog({
 
       onUploaded()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Yuklash muvaffaqiyatsiz.')
+      setErr(e instanceof Error ? e.message : 'Upload failed.')
     } finally {
       setUploading(false)
     }
@@ -195,7 +195,7 @@ export default function UploadWithQuestionsDialog({
           </div>
           <button
             onClick={onClose}
-            aria-label="Yopish"
+            aria-label="Close"
             className="grid h-8 w-8 place-items-center rounded-full text-ink-muted transition-colors hover:bg-cream-warm hover:text-ink"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -215,7 +215,7 @@ export default function UploadWithQuestionsDialog({
             pasteValue={textPaste}
             setPasteValue={setTextPaste}
             placeholder="Reading matnini shu yerga joylashtiring…"
-            hint="Bitta maqola yoki qisqa parcha yuklang — butun kitob, roman yoki she'riy to'plam emas (PDF: max 30 sahifa)."
+            hint="Upload a single article or short passage — not a whole book, novel, or poetry collection (PDF: max 30 pages)."
             maxChars={MAX_MATERIAL_CHARS}
             invalid={(attempted && !hasMainText) || mainTextTooLong}
           />
@@ -359,18 +359,18 @@ export default function UploadWithQuestionsDialog({
 
         <div className="flex items-center justify-between border-t border-ink/6 bg-cream-warm/30 px-6 py-3.5">
           <p className="hidden text-[11px] text-ink-muted sm:block">
-            Ikkalasi ham moderatsiyadan o'tadi
+            Both go through moderation
           </p>
           <div className="flex w-full justify-end gap-2 sm:w-auto">
             <button onClick={onClose} disabled={uploading} className="btn-ghost px-4 py-2 text-xs">
-              Bekor qilish
+              Cancel
             </button>
             <button
               onClick={submit}
               disabled={uploading}
               className="btn-primary px-5 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {uploading ? 'Yuklanmoqda…' : 'Yuklash'}
+              {uploading ? 'Uploading…' : 'Upload'}
             </button>
           </div>
         </div>
@@ -457,11 +457,11 @@ function TextOrFileField({
           />
           {file ? (
             <p className="text-xs font-medium text-ink">
-              {file.name} <span className="text-ink-muted">· almashtirish uchun bosing</span>
+              {file.name} <span className="text-ink-muted">· click to replace</span>
             </p>
           ) : (
             <p className={`text-xs ${invalid ? 'text-coral-600' : 'text-ink-muted'}`}>
-              PDF, TXT yoki DOCX — bosib tanlang
+              PDF, TXT, or DOCX — click to choose
             </p>
           )}
         </label>

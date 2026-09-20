@@ -62,20 +62,19 @@ export default function ReadingMyResults() {
 
       <div className="mx-auto max-w-2xl px-5 py-6">
         {loading ? (
-          <p className="py-16 text-center text-sm text-ink-muted">Yuklanmoqda…</p>
+          <p className="py-16 text-center text-sm text-ink-muted">Loading…</p>
         ) : error ? (
           <p className="py-16 text-center text-sm text-coral-700">{error}</p>
         ) : submissions.length === 0 ? (
           <div className="rounded-3xl border border-ink/8 bg-white px-6 py-14 text-center">
             <p className="mb-1 font-display text-base font-semibold text-ink">
-              Hali natijalar yo'q
+              No results yet
             </p>
             <p className="mb-5 text-sm text-ink-muted">
-              Birinchi reading testini yechib ko'ring — natijalar shu yerda
-              to'planib boradi.
+              Try your first Reading test — your results will show up here.
             </p>
             <Link to="/learn/reading" className="btn-primary">
-              Reading'ga o'tish
+              Go to Reading
             </Link>
           </div>
         ) : (

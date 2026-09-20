@@ -231,14 +231,14 @@ export default function ListeningPractice() {
             setTranscript(text)
             setTranscriptOpen(true)
             if (!text) {
-                setTranscriptError('Transcript bo\'sh yoki mavjud emas.')
+                setTranscriptError('Transcript is empty or unavailable.')
             }
         } catch (err) {
             if (err instanceof ApiError && err.status === 404) {
-                setTranscriptError('Bu material uchun transcript qo\'shilmagan.')
+                setTranscriptError('No transcript has been added for this material.')
             } else {
                 setTranscriptError(
-                    err instanceof Error ? err.message : 'Transcript ochilmadi.'
+                    err instanceof Error ? err.message : 'Could not open transcript.'
                 )
             }
             setTranscriptOpen(true) // panelni ochib xatoni ko'rsatamiz
@@ -259,7 +259,7 @@ export default function ListeningPractice() {
             <main className="grid min-h-screen place-items-center bg-cream px-5 text-center">
                 <div>
                     <p className="mb-4 text-sm text-coral-700">
-                        {error ?? 'Material topilmadi.'}
+                        {error ?? 'Material not found.'}
                     </p>
                     <Link to="/learn/listening" className="btn-primary">
                         Back
@@ -423,7 +423,7 @@ export default function ListeningPractice() {
                                     </p>
                                 </div>
                             ) : (
-                                <p className="text-sm text-ink-muted">Transcript bo'sh.</p>
+                                <p className="text-sm text-ink-muted">Transcript is empty.</p>
                             )}
                         </aside>
                     )}
@@ -610,8 +610,8 @@ function QuestionsPanel({
             )}
             {!loading && !error && questions.length === 0 && (
                 <p className="text-sm text-ink-muted">
-                    Bu material'ga savollar hali qo'shilmagan. Practice mode uchun
-                    audio va transcript kifoya.
+                    No questions have been added for this material yet. Practice mode
+                    just needs audio and a transcript.
                 </p>
             )}
 

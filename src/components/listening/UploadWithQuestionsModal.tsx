@@ -239,9 +239,9 @@ export default function UploadWithQuestionsModal({
             if (transcriptTooLong) {
                 const approxWords = Math.round(transcriptText.trim().length / 6)
                 setError(
-                    `Transcript juda uzun (~${approxWords} so'z, ${transcriptText.trim().length} belgi). ` +
-                    `Listening darsi uchun bitta audio-uzunlikdagi matn yuklang — butun kitob emas. ` +
-                    `Chegara: ${MAX_TRANSCRIPT_CHARS.toLocaleString('en-US')} belgigacha.`
+                    `Transcript is too long (~${approxWords} words, ${transcriptText.trim().length} characters). ` +
+                    `Upload text matching the length of the audio for a Listening lesson — not a whole book. ` +
+                    `Limit: ${MAX_TRANSCRIPT_CHARS.toLocaleString('en-US')} characters.`
                 )
             }
             return
@@ -890,7 +890,7 @@ function TranscriptInput({
       />
             {parsing && (
                 <div className="absolute inset-0 grid place-items-center rounded-2xl bg-white/80">
-                    <p className="text-xs font-medium text-indigo-600">PDF o'qilmoqda…</p>
+                    <p className="text-xs font-medium text-indigo-600">Reading PDF…</p>
                 </div>
             )}
             <div className="flex items-center justify-between border-t border-ink/6 px-3 py-1.5 text-xs text-ink-muted">

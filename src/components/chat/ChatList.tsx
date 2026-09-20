@@ -251,7 +251,7 @@ export default function ChatList({
               newUsers.length === 0 &&
               !searching && (
                 <p className="p-4 text-center text-sm text-ink-muted">
-                  {isSearching ? 'Foydalanuvchi topilmadi' : "Hozircha suhbat yo'q"}
+                  {isSearching ? 'No users found' : "No conversations yet"}
                 </p>
               )}
 

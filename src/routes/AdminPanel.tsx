@@ -329,7 +329,7 @@ function UserDetailPanel({
   }, [userId])
 
   const toggleBan = async () => {
-    if (!detail) return
+    if (!detail || busy) return
     setBusy(true)
     try {
       if (detail.banned) {
@@ -497,6 +497,7 @@ function RolesEditor({
   }
 
   const save = async () => {
+    if (saving) return
     if (selected.size === 0) {
       setError('Select at least one role.')
       return

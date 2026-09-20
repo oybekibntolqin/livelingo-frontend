@@ -1,21 +1,20 @@
-// Ball 70% dan past bo'lganda ko'rsatiladigan motivatsion karta —
-// Reading, Writing, Listening natija sahifalarining hammasida
-// ishlatiladi.  70% yoki undan yuqori bo'lsa — hech narsa
-// render qilmaydi (null).
+// Motivational card shown when score is below 70% — used on the
+// Reading, Writing, and Listening results pages. Renders nothing
+// (null) when the score is 70% or higher.
 
 import { useMemo } from 'react'
 import { randomQuote } from '../../lib/motivation'
 
 export default function MotivationalCard({ scorePercent }: { scorePercent: number }) {
-  // Har render'da bir xil iqtibos qolishi uchun — useMemo (aks holda
-  // re-render'да iqtibos "sakrab" turardi)
+  // Keep the same quote across re-renders of this instance — useMemo
+  // (otherwise the quote would "jump" on every re-render)
   const quote = useMemo(() => randomQuote(), [])
 
   if (scorePercent >= 70) return null
 
   return (
     <div className="relative mb-6 overflow-hidden rounded-3xl border border-indigo-500/15 bg-gradient-to-br from-indigo-50 via-white to-mint-50 p-6 sm:p-7">
-      {/* Fon bezaklari */}
+      {/* Background decoration */}
       <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-indigo-500/8 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-mint-500/10 blur-2xl" />
 
@@ -27,7 +26,7 @@ export default function MotivationalCard({ scorePercent }: { scorePercent: numbe
             </svg>
           </div>
           <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-indigo-600">
-            Davom eting — bu faqat boshlanish
+            Keep going — this is only the start
           </p>
         </div>
 
@@ -45,7 +44,7 @@ export default function MotivationalCard({ scorePercent }: { scorePercent: numbe
         </svg>
 
         <p className="mb-3 font-display text-lg font-semibold leading-snug text-ink sm:text-xl">
-          {quote.textUz}
+          "{quote.text}"
         </p>
 
         <div className="flex items-center gap-2">
@@ -56,8 +55,6 @@ export default function MotivationalCard({ scorePercent }: { scorePercent: numbe
             {quote.role}
           </p>
         </div>
-
-        <p className="mt-3 text-xs italic text-ink-muted/70">"{quote.textOriginal}"</p>
       </div>
     </div>
   )

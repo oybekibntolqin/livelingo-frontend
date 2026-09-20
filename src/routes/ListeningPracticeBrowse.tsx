@@ -264,7 +264,7 @@ export default function ListeningPracticeBrowse() {
               <button
                 onClick={() => setOwnModalOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-2xl border border-ink/12 bg-white px-4 py-2 text-sm font-medium text-ink transition hover:border-indigo-500/40 hover:bg-indigo-50"
-                title="O'z savollaringiz bilan"
+                title="With your own questions"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />

@@ -84,6 +84,11 @@ export default function SignIn() {
   }, [clientId])
 
   const handleCredential = async (resp: GoogleCredentialResponse) => {
+    // Guard against a second credential callback firing while the first
+    // sign-in request is still in flight (e.g. rapid re-clicks of the
+    // Google button), which could otherwise fire two concurrent
+    // /api/auth/google requests and race on navigate()/setToken().
+    if (submitting) return
     setError(null)
     setSubmitting(true)
     try {
