@@ -43,7 +43,7 @@ export default function ReportedUsers() {
     reportApi
       .getMyReports()
       .then(setReports)
-      .catch((err) => setError(err instanceof Error ? err.message : "Yuklanmadi."))
+      .catch((err) => setError(err instanceof Error ? err.message : "Could not load."))
       .finally(() => setLoading(false))
   }, [])
 
@@ -79,7 +79,7 @@ export default function ReportedUsers() {
               <p className="py-12 text-center text-sm text-coral-700">{error}</p>
             ) : reports.length === 0 ? (
               <p className="py-12 text-center text-sm text-ink-muted">
-                Siz hech kimni report qilmagansiz.
+                You haven't reported anyone.
               </p>
             ) : (
               <div className="space-y-1">

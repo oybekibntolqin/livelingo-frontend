@@ -106,6 +106,7 @@ export default function GenerateQuestionsModal({
   }, [open, generating, onClose])
 
   const generate = async () => {
+    if (generating) return
     setGenerating(true)
     setError(null)
     try {

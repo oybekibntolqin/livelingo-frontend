@@ -41,7 +41,7 @@ export default function ListeningUploadTab() {
     setError(null)
     setResult(null)
     if (f && !/\.zip$/i.test(f.name)) {
-      setError('Faqat .zip fayl qabul qilinadi.')
+      setError('Only .zip files are accepted.')
       setZipFile(null)
       return
     }
@@ -50,7 +50,7 @@ export default function ListeningUploadTab() {
 
   const submit = () => {
     if (!zipFile) {
-      setError('Avval ZIP fayl tanlang.')
+      setError('Please select a ZIP file first.')
       return
     }
 
@@ -83,7 +83,7 @@ export default function ListeningUploadTab() {
     }
     xhr.onerror = () => {
       setUploading(false)
-      setError('Tarmoq xatosi. Qayta urinib ko\u2018ring.')
+      setError('Network error. Please try again.')
     }
     xhr.onload = () => {
       setUploading(false)
@@ -93,16 +93,16 @@ export default function ListeningUploadTab() {
           setResult(data)
           setZipFile(null)
         } catch {
-          setError('Server javobini o\u2018qib bo\u2018lmadi.')
+          setError('Could not read the server response.')
         }
       } else if (xhr.status === 403) {
-        setError('Ruxsat yo\u2018q — bu amal faqat Admin/Owner uchun.')
+        setError('Not authorized — this action is Admin/Owner only.')
       } else {
         try {
           const data = JSON.parse(xhr.responseText)
-          setError(typeof data === 'string' ? data : data.message || 'Yuklashda xatolik yuz berdi.')
+          setError(typeof data === 'string' ? data : data.message || 'Upload failed.')
         } catch {
-          setError(xhr.responseText || 'Yuklashda xatolik yuz berdi.')
+          setError(xhr.responseText || 'Upload failed.')
         }
       }
     }
@@ -113,19 +113,19 @@ export default function ListeningUploadTab() {
   return (
     <div className="max-w-2xl">
       <h2 className="mb-1 font-display text-lg font-bold text-ink">
-        Listening materiallarni ZIP orqali ommaviy yuklash
+        Bulk-upload Listening materials via ZIP
       </h2>
       <p className="mb-6 text-sm text-ink-muted">
-        ZIP ichida har bir papka bitta material bo'ladi — papka nomi{' '}
+        Each folder in the ZIP is one material — folder names should look{' '}
         <code className="rounded bg-ink/5 px-1 py-0.5 text-xs">lesson1/audio.mp3</code> va{' '}
         <code className="rounded bg-ink/5 px-1 py-0.5 text-xs">lesson1/transcript.txt</code> tarzida
-        joylashgan bo'lishi kerak. Faqat mp3/wav/ogg audio va .txt transcript qabul qilinadi.
+        like this. Only mp3/wav/ogg audio and .txt transcripts are accepted.
       </p>
 
       <div className="space-y-4 rounded-3xl border border-ink/8 bg-white p-6">
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted">
-            ZIP fayl
+            ZIP file
           </span>
           <input
             type="file"
@@ -144,7 +144,7 @@ export default function ListeningUploadTab() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Til
+              Language
             </span>
             <select
               value={languageCode}
@@ -165,7 +165,7 @@ export default function ListeningUploadTab() {
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Daraja
+              Level
             </span>
             <select
               value={cefrLevel}
@@ -183,7 +183,7 @@ export default function ListeningUploadTab() {
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Sertifikat
+              Certificate
             </span>
             <select
               value={certificateType}
@@ -202,7 +202,7 @@ export default function ListeningUploadTab() {
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Mavzu (ixtiyoriy)
+              Topic (optional)
             </span>
             <input
               type="text"
@@ -228,7 +228,7 @@ export default function ListeningUploadTab() {
 
         {result && (
           <p className="text-sm text-mint-700">
-            ✓ {result.count} ta material muvaffaqiyatli yuklandi.
+            ✓ {result.count} materials uploaded successfully.
           </p>
         )}
 
@@ -237,7 +237,7 @@ export default function ListeningUploadTab() {
           disabled={uploading || !zipFile}
           className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {uploading ? `Yuklanmoqda… ${progress}%` : 'ZIP yuklash'}
+          {uploading ? `Uploading… ${progress}%` : 'Upload ZIP'}
         </button>
       </div>
     </div>

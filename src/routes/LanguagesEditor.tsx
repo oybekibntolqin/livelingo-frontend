@@ -22,7 +22,7 @@ export default function LanguagesEditor() {
     languageApi
       .list()
       .then(setLanguages)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Tillar yuklanmadi.'))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Could not load languages.'))
   }
 
   useEffect(load, [])
@@ -31,6 +31,7 @@ export default function LanguagesEditor() {
   const learning = (languages ?? []).filter((l) => l.languageRole === 'LEARNING')
 
   const remove = async (code: string) => {
+    if (busyCode) return
     setError(null)
     setBusyCode(code)
     try {
@@ -41,34 +42,35 @@ export default function LanguagesEditor() {
       // native/learning language") shu yerda to'g'ridan-to'g'ri
       // ko'rsatiladi — foydalanuvchi nima uchun o'chira olmayotganini
       // aniq tushunadi.
-      setError(err instanceof Error ? err.message : "O'chirilmadi. Qayta urinib ko'ring.")
+      setError(err instanceof Error ? err.message : "Could not remove. Please try again.")
     } finally {
       setBusyCode(null)
     }
   }
 
   const add = async (role: 'NATIVE' | 'LEARNING', code: string, cefrLevel: string) => {
+    if (busyCode) return
     setError(null)
     setBusyCode(code)
     try {
       const created = await languageApi.add({ languageCode: code, languageRole: role, cefrLevel })
       setLanguages((prev) => (prev ? [...prev, created] : [created]))
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Qo'shilmadi. Qayta urinib ko'ring.")
+      setError(err instanceof Error ? err.message : "Could not add. Please try again.")
     } finally {
       setBusyCode(null)
     }
   }
 
   if (!languages) {
-    return <p className="text-xs text-ink-muted">Tillar yuklanmoqda…</p>
+    return <p className="text-xs text-ink-muted">Loading languages…</p>
   }
 
   return (
     <div className="space-y-4 rounded-2xl border border-ink/10 bg-cream/60 p-4">
       <LanguageGroup
         title="Native languages"
-        hint="Ona tilingiz — kamida 1 ta bo'lishi shart."
+        hint="Your native language — at least 1 is required."
         role="NATIVE"
         items={natives}
         canRemove={natives.length > 1}
@@ -80,7 +82,7 @@ export default function LanguagesEditor() {
 
       <LanguageGroup
         title="Learning languages"
-        hint="O'rganayotgan tilingiz — kamida 1 ta bo'lishi shart."
+        hint="Language you're learning — at least 1 is required."
         role="LEARNING"
         items={learning}
         canRemove={learning.length > 1}
@@ -148,7 +150,7 @@ function LanguageGroup({
               type="button"
               onClick={() => onRemove(l.languageCode)}
               disabled={!canRemove || busyCode === l.languageCode}
-              title={!canRemove ? `Kamida 1 ta ${title.toLowerCase()} qolishi kerak` : 'Remove'}
+              title={!canRemove ? `At least 1 ${title.toLowerCase()} is required` : 'Remove'}
               className="ml-0.5 rounded-full p-0.5 text-ink-muted transition hover:bg-coral-50 hover:text-coral-600 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">

@@ -40,7 +40,7 @@ export default function Settings() {
   const [privacyError, setPrivacyError] = useState<string | null>(null)
 
   const togglePrivacy = async () => {
-    if (!profile) return
+    if (!profile || togglingPrivacy) return
     const next = !profile.showOnlineStatus
     setTogglingPrivacy(true)
     setPrivacyError(null)
@@ -50,7 +50,7 @@ export default function Settings() {
       setProfile(updated)
     } catch (err) {
       setProfile((prev) => (prev ? { ...prev, showOnlineStatus: !next } : prev))
-      setPrivacyError(err instanceof Error ? err.message : "Saqlanmadi. Qayta urinib ko'ring.")
+      setPrivacyError(err instanceof Error ? err.message : "Could not save. Please try again.")
     } finally {
       setTogglingPrivacy(false)
     }
@@ -68,13 +68,14 @@ export default function Settings() {
   const [logoutAllError, setLogoutAllError] = useState<string | null>(null)
 
   const handleLogoutAll = async () => {
+    if (loggingOutAll) return
     setLoggingOutAll(true)
     setLogoutAllError(null)
     try {
       await revokeAllSessions()
       performLogout(navigate)
     } catch (err) {
-      setLogoutAllError(err instanceof Error ? err.message : "Bajarilmadi. Qayta urinib ko'ring.")
+      setLogoutAllError(err instanceof Error ? err.message : "Failed. Please try again.")
       setLoggingOutAll(false)
     }
   }
@@ -116,11 +117,11 @@ export default function Settings() {
               {loading ? (
                   <div className="flex flex-col items-center justify-center py-16">
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"></div>
-                    <p className="mt-3 text-sm text-ink-muted">Yuklanmoqda…</p>
+                    <p className="mt-3 text-sm text-ink-muted">Loading…</p>
                   </div>
               ) : loadError || !profile ? (
                   <div className="rounded-2xl border border-coral-200 bg-coral-50/50 p-4 text-center">
-                    <p className="text-sm font-medium text-coral-700">{loadError ?? 'Profil topilmadi.'}</p>
+                    <p className="text-sm font-medium text-coral-700">{loadError ?? 'Profile not found.'}</p>
                   </div>
               ) : (
                   <div className="space-y-6">
@@ -135,8 +136,8 @@ export default function Settings() {
                           <p className="text-sm font-semibold text-ink">Show when I'm online</p>
                           <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">
                             {profile.showOnlineStatus
-                                ? "Boshqalar sizning aniq online/offline holatingizni ko'radi."
-                                : 'Boshqalar aniq holatni ko\'rmaydi — o\'rniga "last seen recently" ko\'rsatiladi.'}
+                                ? "Others can see your exact online/offline status."
+                                : 'Others won\'t see your exact status — "last seen recently" is shown instead.'}
                           </p>
                         </div>
 
@@ -229,7 +230,7 @@ export default function Settings() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-ink">Log out of all devices</p>
-                            <p className="text-xs text-ink-muted">Boshqa qurilmalardagi barcha sessiyalarni tugatadi</p>
+                            <p className="text-xs text-ink-muted">Ends all active sessions on your other devices</p>
                           </div>
                         </div>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-ink">
@@ -271,28 +272,28 @@ export default function Settings() {
                 {/* Matnlar */}
                 <div className="mt-4 text-center">
                   <h3 className="font-display text-lg font-bold text-ink">
-                    Hisobdan chiqmoqchimisiz?
+                    Sign out of your account?
                   </h3>
                   <p className="mt-1.5 text-xs leading-relaxed text-ink-muted">
-                    Qayta kirish uchun hisob ma'lumotlaringizni qaytadan kiritishingiz talab etiladi.
+                    You'll need to sign in again to access your account.
                   </p>
                 </div>
 
-                {/* Tugmalar */}
+                {/* Buttons */}
                 <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
                   <button
                       type="button"
                       onClick={() => setConfirmingLogout(false)}
                       className="w-full rounded-xl border border-ink/10 bg-cream/40 px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-cream/80 active:scale-[0.98]"
                   >
-                    Bekor qilish
+                    Cancel
                   </button>
                   <button
                       type="button"
                       onClick={() => performLogout(navigate)}
                       className="w-full rounded-xl bg-coral-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-coral-600/30 transition-all hover:bg-coral-700 active:scale-[0.98]"
                   >
-                    Ha, chiqish
+                    Yes, sign out
                   </button>
                 </div>
               </div>
@@ -323,10 +324,10 @@ export default function Settings() {
 
                 <div className="mt-4 text-center">
                   <h3 className="font-display text-lg font-bold text-ink">
-                    Barcha qurilmalardan chiqmoqchimisiz?
+                    Sign out of all devices?
                   </h3>
                   <p className="mt-1.5 text-xs leading-relaxed text-ink-muted">
-                    Boshqa telefon/brauzerlardagi barcha faol sessiyalar tugatiladi va bu qurilmadan ham chiqasiz. Har birida qayta login qilishingiz kerak bo'ladi.
+                    All active sessions on your other phones/browsers will end, and you'll be signed out here too. You'll need to log in again on each device.
                   </p>
                 </div>
 
@@ -337,7 +338,7 @@ export default function Settings() {
                       disabled={loggingOutAll}
                       className="w-full rounded-xl border border-ink/10 bg-cream/40 px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-cream/80 active:scale-[0.98] disabled:opacity-50"
                   >
-                    Bekor qilish
+                    Cancel
                   </button>
                   <button
                       type="button"
@@ -345,7 +346,7 @@ export default function Settings() {
                       disabled={loggingOutAll}
                       className="w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-600/30 transition-all hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50"
                   >
-                    {loggingOutAll ? 'Bajarilmoqda…' : 'Ha, hammasidan chiqish'}
+                    {loggingOutAll ? 'Working…' : 'Yes, sign out everywhere'}
                   </button>
                 </div>
               </div>

@@ -9,7 +9,46 @@
       name="description"
       content="LiveLingo — AI-powered language learning with real people. CEFR exercises, live chat, video calls, and flashcards in 15+ languages."
     />
-    <title>LiveLingo — Learn languages with real people</title>
+    <title>LiveLingo — Language Learning, Language Exchange & P2P Video Chat</title>
+    <link rel="canonical" href="https://livelingo.uz/" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph / Twitter — this static baseline matters because
+         most social-preview bots (Telegram, WhatsApp, Facebook,
+         X/Twitter) do NOT execute JavaScript, so they only ever see
+         these tags, not the per-route ones set at runtime by
+         src/lib/useSEO.ts for /language-learning etc. Search
+         engines (Googlebot) DO execute JS and will see the more
+         specific per-route tags. This is a known limitation of a
+         pure client-rendered SPA with no server-side rendering —
+         see the SEO audit notes for details. -->
+    <meta property="og:site_name" content="LiveLingo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="LiveLingo — Language Learning, Language Exchange & P2P Video Chat" />
+    <meta
+      property="og:description"
+      content="LiveLingo is a language learning platform for practicing languages with real people through P2P video chat, speaking/reading/writing/listening exercises, and flashcards — in 15+ languages."
+    />
+    <meta property="og:url" content="https://livelingo.uz/" />
+    <meta property="og:image" content="https://livelingo.uz/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LiveLingo — Language Learning, Language Exchange & P2P Video Chat" />
+    <meta
+      name="twitter:description"
+      content="LiveLingo is a language learning platform for practicing languages with real people through P2P video chat, speaking/reading/writing/listening exercises, and flashcards — in 15+ languages."
+    />
+    <meta name="twitter:image" content="https://livelingo.uz/og-image.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "LiveLingo",
+        "url": "https://livelingo.uz",
+        "logo": "https://livelingo.uz/favicon.svg",
+        "sameAs": ["https://t.me/livelingobot"]
+      }
+    </script>
 
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

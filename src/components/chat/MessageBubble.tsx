@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { formatDuration, formatFileSize } from '../../lib/chatApi'
+import { parseServerDate } from '../../lib/dateUtils'
 import type { ChatMessage } from '../../lib/chatTypes'
 
 interface Props {
@@ -67,7 +68,7 @@ export default function MessageBubble({
         )
     }
 
-    const time = new Date(m.createdAt).toLocaleTimeString([], {
+    const time = parseServerDate(m.createdAt).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
     })

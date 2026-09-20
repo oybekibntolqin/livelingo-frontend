@@ -11,7 +11,7 @@
 // Cards navigate to /learn/writing/session/:id where the user actually
 // writes.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo'
@@ -140,7 +140,10 @@ export default function Writing() {
   }, [loadQuestions])
 
   // ── Random question ───────────────────────────────────────────
+  const openRandomRef = useRef(false)
   const openRandom = async () => {
+    if (openRandomRef.current) return
+    openRandomRef.current = true
     try {
       const qs = new URLSearchParams({ lang })
       if (cert) qs.set('cert', cert)
@@ -151,6 +154,8 @@ export default function Writing() {
       if (q?.id) navigate(`/learn/writing/session/${q.id}`)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'No question matched.')
+    } finally {
+      openRandomRef.current = false
     }
   }
 

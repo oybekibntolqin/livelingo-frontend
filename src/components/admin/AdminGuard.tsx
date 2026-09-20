@@ -62,6 +62,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   }, [])
 
   const handleSetPassword = async (password: string, confirm: string) => {
+    if (pwLoading) return
     setPwError(null)
     if (password.length < 6) {
       setPwError('Password must be at least 6 characters.')
@@ -84,6 +85,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   }
 
   const handleVerifyPassword = async (password: string) => {
+    if (pwLoading) return
     setPwError(null)
     setPwLoading(true)
     try {

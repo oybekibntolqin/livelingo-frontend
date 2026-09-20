@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useRef, useState, type UIEvent } from 'react'
 import { chatApi } from '../../lib/chatApi'
+import { parseServerDate } from '../../lib/dateUtils'
 import type { ChatListItem, UserSearchResult } from '../../lib/chatTypes'
 import Avatar from '../Avatar'
 
@@ -250,7 +251,7 @@ export default function ChatList({
               newUsers.length === 0 &&
               !searching && (
                 <p className="p-4 text-center text-sm text-ink-muted">
-                  {isSearching ? 'Foydalanuvchi topilmadi' : "Hozircha suhbat yo'q"}
+                  {isSearching ? 'No users found' : "No conversations yet"}
                 </p>
               )}
 
@@ -361,7 +362,7 @@ function initials(first: string, last: string): string {
 }
 
 function formatListTime(iso: string): string {
-  const d = new Date(iso)
+  const d = parseServerDate(iso)
   const now = new Date()
   const sameDay = d.toDateString() === now.toDateString()
   if (sameDay) {

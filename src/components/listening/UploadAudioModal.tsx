@@ -232,9 +232,9 @@ export default function UploadAudioModal({
       if (transcriptTooLong) {
         const approxWords = Math.round(transcriptText.trim().length / 6)
         setError(
-          `Transcript juda uzun (~${approxWords} so'z, ${transcriptText.trim().length} belgi). ` +
-            `Listening darsi uchun bitta audio-uzunlikdagi matn yuklang — butun kitob emas. ` +
-            `Chegara: ${MAX_TRANSCRIPT_CHARS.toLocaleString('en-US')} belgigacha.`
+          `Transcript is too long (~${approxWords} words, ${transcriptText.trim().length} characters). ` +
+            `Upload text matching the length of the audio for a Listening lesson — not a whole book. ` +
+            `Limit: ${MAX_TRANSCRIPT_CHARS.toLocaleString('en-US')} characters.`
         )
       }
       return

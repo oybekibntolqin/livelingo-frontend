@@ -12,30 +12,38 @@
 
 import { Link, useNavigate } from 'react-router-dom'
 import { isAuthenticated } from '../lib/auth'
+import { useSEO } from '../lib/useSEO'
 
 export default function NotFound() {
     const navigate = useNavigate()
     const homePath = isAuthenticated() ? '/dashboard' : '/'
 
+    useSEO({
+        title: 'Page not found | LiveLingo',
+        description: 'The page you were looking for could not be found.',
+        path: typeof window !== 'undefined' ? window.location.pathname : '/404',
+        noindex: true,
+    })
+
     return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-cream px-6 text-center">
             <p className="font-display text-6xl font-bold text-ink/15">404</p>
-            <h1 className="font-display text-xl font-semibold text-ink">Sahifa topilmadi</h1>
+            <h1 className="font-display text-xl font-semibold text-ink">Page not found</h1>
             <p className="max-w-xs text-sm text-ink-muted">
-                Siz izlagan sahifa mavjud emas yoki ko'chirilgan bo'lishi mumkin.
+                The page you're looking for doesn't exist or may have been moved.
             </p>
             <div className="mt-2 flex items-center gap-3">
                 <button
                     onClick={() => navigate(-1)}
                     className="rounded-full border border-ink/10 px-4 py-2 text-sm font-medium text-ink-soft transition hover:bg-white"
                 >
-                    Orqaga
+                    Go back
                 </button>
                 <Link
                     to={homePath}
                     className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
                 >
-                    Bosh sahifaga
+                    Go home
                 </Link>
             </div>
         </div>

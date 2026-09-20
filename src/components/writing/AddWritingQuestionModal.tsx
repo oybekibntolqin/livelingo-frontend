@@ -91,9 +91,9 @@ export default function AddWritingQuestionModal({
       if (questionTooLong) {
         const approxWords = Math.round(question.trim().length / 6)
         setErr(
-          `Savol matni juda uzun (~${approxWords} so'z, ${question.trim().length} belgi). ` +
-            `Writing savoli/topshirig'i qisqa bo'lishi kerak — hujjat yoki kitob emas. ` +
-            `Chegara: ${MAX_QUESTION_CHARS.toLocaleString('en-US')} belgigacha.`
+          `Question text is too long (~${approxWords} words, ${question.trim().length} characters). ` +
+            `A Writing question/prompt should be short — not a document or book. ` +
+            `Limit: ${MAX_QUESTION_CHARS.toLocaleString('en-US')} characters.`
         )
       }
       return

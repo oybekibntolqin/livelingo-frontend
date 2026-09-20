@@ -242,12 +242,12 @@ export default function CallOverlay() {
                         </div>
                     </div>
                     <h3 className="font-display text-xl font-bold text-white mb-1">{call.peerName}</h3>
-                    <p className="mb-8 text-sm text-zinc-400">Guruh videosuhbati yoki shaxsiy qo'ng'iroq…</p>
+                    <p className="mb-8 text-sm text-zinc-400">Incoming video call…</p>
                     <div className="flex justify-center gap-6">
                         <button
                             onClick={rejectCall}
                             className="grid h-14 w-14 place-items-center rounded-full bg-red-500 text-white shadow-lg transition duration-200 hover:bg-red-600 hover:scale-105 active:scale-95"
-                            title="Rad etish"
+                            title="Decline"
                         >
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -257,7 +257,7 @@ export default function CallOverlay() {
                         <button
                             onClick={acceptCall}
                             className="grid h-14 w-14 place-items-center rounded-full bg-emerald-500 text-white shadow-lg transition duration-200 hover:bg-emerald-600 hover:scale-105 active:scale-95"
-                            title="Qabul qilish"
+                            title="Accept"
                         >
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M23 7l-7 5 7 5V7z" />
@@ -274,14 +274,14 @@ export default function CallOverlay() {
     if (call.state === 'ended') {
         const label =
             call.endedReason === 'rejected'
-                ? 'Rad etildi'
+                ? 'Declined'
                 : call.endedReason === 'missed'
-                    ? "O'tkazib yuborildi"
+                    ? 'Missed'
                     : call.endedReason === 'busy'
-                        ? 'Foydalanuvchi band'
+                        ? 'User is busy'
                         : call.endedReason === 'error'
-                            ? 'Ulanish uzildi'
-                            : 'Qo\'ng\'iroq tugadi'
+                            ? 'Connection lost'
+                            : 'Call ended'
         return (
             <div className="fixed bottom-6 right-6 z-50 rounded-2xl bg-zinc-900 border border-zinc-800 px-5 py-3 text-sm font-medium text-white shadow-2xl animate-fade-in-up">
                 <div className="flex items-center gap-2">
@@ -294,9 +294,9 @@ export default function CallOverlay() {
 
     const statusLabel =
         call.state === 'calling'
-            ? 'Qo\'ng\'iroq qilinmoqda…'
+            ? 'Calling…'
             : call.state === 'connecting'
-                ? 'Ulanmoqda…'
+                ? 'Connecting…'
                 : formatDuration(elapsed)
 
     // Oyna joylashuvi va o'lcham klasslari
@@ -402,7 +402,7 @@ export default function CallOverlay() {
                             <button
                                 onClick={() => setMinimized(false)}
                                 className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
-                                title="Kattalashtirish"
+                                title="Expand"
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                     <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
@@ -459,7 +459,7 @@ export default function CallOverlay() {
                                 <button
                                     onClick={() => setMinimized(true)}
                                     className="p-2 rounded-xl bg-black/40 text-white hover:bg-black/60 transition backdrop-blur-md"
-                                    title="Kichraytirish"
+                                    title="Minimize"
                                 >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                         <line x1="5" y1="12" x2="19" y2="12" />
@@ -484,7 +484,7 @@ export default function CallOverlay() {
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
                                     <div className="flex-1">
-                                        <span className="font-semibold block mb-0.5">Tizim ogohlantirishi</span>
+                                        <span className="font-semibold block mb-0.5">System warning</span>
                                         <span>{warning}</span>
                                     </div>
                                 </div>
@@ -515,7 +515,7 @@ export default function CallOverlay() {
                                             ? 'bg-red-500 border-red-400 text-white'
                                             : 'bg-zinc-800/80 border-white/10 text-white hover:bg-zinc-700'
                                     }`}
-                                    title={muted ? "Ovozni yoqish" : "Ovozni o'chirish"}
+                                    title={muted ? "Unmute" : "Mute"}
                                 >
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                         {muted ? (
@@ -543,7 +543,7 @@ export default function CallOverlay() {
                                             ? 'bg-red-500 border-red-400 text-white'
                                             : 'bg-zinc-800/80 border-white/10 text-white hover:bg-zinc-700'
                                     }`}
-                                    title={cameraOff ? "Kamerani yoqish" : "Kamerani o'chirish"}
+                                    title={cameraOff ? "Turn camera on" : "Turn camera off"}
                                 >
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                         {cameraOff ? (
@@ -570,7 +570,7 @@ export default function CallOverlay() {
                                                 ? 'bg-zinc-800/80 border-white/10 text-white hover:bg-zinc-700'
                                                 : 'bg-amber-500 border-amber-400 text-white'
                                         }`}
-                                        title={speakerOn ? "Karnayni o'chirish" : 'Karnayni yoqish'}
+                                        title={speakerOn ? "Turn speaker off" : 'Turn speaker on'}
                                     >
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                             <path d="M11 5L6 9H2v6h4l5 4V5z" />
@@ -589,7 +589,7 @@ export default function CallOverlay() {
                                     <button
                                         onClick={switchCamera}
                                         className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-800/80 border border-white/10 text-white shadow-md transition duration-200 hover:bg-zinc-700 hover:scale-105 active:scale-95"
-                                        title="Kamerani almashtirish (old/orqa)"
+                                        title="Switch camera (front/back)"
                                     >
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                             <path d="M17 1l4 4-4 4" />
@@ -604,7 +604,7 @@ export default function CallOverlay() {
                                 <button
                                     onClick={endCall}
                                     className="grid h-12 w-14 place-items-center rounded-2xl bg-red-600 border border-red-500 text-white shadow-lg transition duration-200 hover:bg-red-700 hover:scale-105 active:scale-95"
-                                    title="Qo'ng'iroqni tugatish"
+                                    title="End call"
                                 >
                                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                                         <path

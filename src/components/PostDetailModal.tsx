@@ -446,7 +446,7 @@ export default function PostDetailModal({
                         </>
                       ) : (
                         <div className="p-3">
-                          <p className="mb-2.5 text-xs text-ink-soft">Postni o'chirasizmi?</p>
+                          <p className="mb-2.5 text-xs text-ink-soft">Delete this post?</p>
                           {deleteError && <p className="mb-2.5 text-[11px] text-coral-700">{deleteError}</p>}
                           <div className="flex gap-2">
                             <button
@@ -518,7 +518,7 @@ export default function PostDetailModal({
               {commentsLoading ? (
                 <p className="py-6 text-center text-xs text-ink-muted">Loading…</p>
               ) : comments.length === 0 ? (
-                <p className="py-6 text-center text-xs text-ink-muted">Hali comment yo'q. Birinchi bo'ling.</p>
+                <p className="py-6 text-center text-xs text-ink-muted">No comments yet. Be the first.</p>
               ) : (
                 <div className="space-y-3 py-2">
                   {comments.map((c) => (

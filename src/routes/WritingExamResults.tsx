@@ -43,7 +43,7 @@ export default function WritingExamResults() {
   if (loading) {
     return (
       <main className="grid min-h-screen place-items-center bg-cream">
-        <p className="text-sm text-ink-muted">Yuklanmoqda…</p>
+        <p className="text-sm text-ink-muted">Loading…</p>
       </main>
     )
   }
@@ -52,9 +52,9 @@ export default function WritingExamResults() {
     return (
       <main className="grid min-h-screen place-items-center bg-cream px-5 text-center">
         <div>
-          <p className="mb-4 text-sm text-coral-700">{error ?? 'Natija topilmadi.'}</p>
+          <p className="mb-4 text-sm text-coral-700">{error ?? 'Result not found.'}</p>
           <Link to="/learn/writing" className="btn-primary">
-            Writing'ga qaytish
+            Back to Writing
           </Link>
         </div>
       </main>
@@ -69,13 +69,13 @@ export default function WritingExamResults() {
         <Link to="/learn/writing" className="text-sm font-medium text-ink-soft hover:text-ink">
           ← Writing
         </Link>
-        <span className="text-sm font-medium text-ink">Exam natijasi</span>
+        <span className="text-sm font-medium text-ink">Exam result</span>
         <Logo size={26} />
       </header>
 
       <div className="mx-auto max-w-2xl px-5 py-8">
         <div className="mb-6 rounded-3xl border border-ink/8 bg-white p-6 text-center">
-          <p className="mb-1 text-xs uppercase tracking-widest text-ink-muted">Umumiy ball</p>
+          <p className="mb-1 text-xs uppercase tracking-widest text-ink-muted">Overall score</p>
           <p className="font-display text-5xl font-bold text-ink">
             {result.overallScore.toFixed(1)}
             <span className="text-2xl text-ink-muted">/{result.maxScore}</span>
@@ -89,8 +89,8 @@ export default function WritingExamResults() {
             <div key={t.id} className="rounded-3xl border border-ink/8 bg-white p-5">
               <div className="mb-2 flex items-center justify-between">
                 <p className="font-display text-sm font-semibold text-ink">
-                  {/* taskType ma'lumoti submission'da yo'q — questionText orqali kontekst beramiz */}
-                  Vazifa
+                  {/* task type isn't in the submission — give context via questionText */}
+                  Task
                 </p>
                 <p className="font-display text-lg font-bold text-ink">
                   {t.overallScore != null ? t.overallScore.toFixed(1) : '—'}
@@ -106,13 +106,13 @@ export default function WritingExamResults() {
 
         <div className="mt-8 flex justify-center gap-3">
           <Link to="/learn/writing/exam" className="btn-primary">
-            Yana urinib ko'rish
+            Try again
           </Link>
           <Link
             to="/learn/writing"
             className="rounded-2xl border border-ink/12 px-5 py-2.5 text-sm font-medium text-ink-soft hover:border-ink/25"
           >
-            Writing'ga qaytish
+            Back to Writing
           </Link>
         </div>
       </div>

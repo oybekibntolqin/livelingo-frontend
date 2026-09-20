@@ -102,7 +102,7 @@ export default function ReadingExam() {
           navigate('/sign-in', { replace: true })
           return
         }
-        setError(err instanceof Error ? err.message : 'Exam yuklanmadi.')
+        setError(err instanceof Error ? err.message : 'Could not load exam.')
         setPhase('error')
       }
     },
@@ -110,7 +110,7 @@ export default function ReadingExam() {
   )
 
   const handleGenerate = async () => {
-    if (!id) return
+    if (!id || generating) return
     setGenerating(true)
     setError(null)
     try {

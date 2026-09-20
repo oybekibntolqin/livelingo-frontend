@@ -162,7 +162,7 @@ export default function Reading() {
             navigate('/sign-in', { replace: true })
           } else {
             // Boshqa har qanday xatolikda foydalanuvchini tizimdan haydamaymiz, balki ekranda xabarni ko'rsatamiz
-            setError("Profil ma'lumotlarini tekshirishda xatolik yuz berdi. Iltimos, sahifani yangilang.")
+            setError("Something went wrong while checking your profile. Please refresh the page.")
           }
         })
 
@@ -322,7 +322,7 @@ export default function Reading() {
                   <path d="M9 11l3 3L22 4" />
                   <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
                 </svg>
-                O'z savollarim bilan
+                With my own questions
               </button>
               <button
                   onClick={() => setShowUpload(true)}
@@ -581,7 +581,7 @@ function MaterialCard({
             <Link
                 to={`/learn/reading/practice/${material.id}`}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-mint-500/20 bg-mint-500/10 px-4 py-2 text-xs font-bold text-mint-700 transition-all duration-300 hover:border-mint-500/40 hover:bg-mint-500 hover:text-white active:scale-95"
-                title="Savollar bilan mashq qilish"
+                title="Practice with questions"
             >
               <span>Practice</span>
             </Link>
